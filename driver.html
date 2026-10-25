@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wasell.com | لوحة تحكم السائق</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Tajawal:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --card-bg: rgba(18, 24, 38, 0.95);
+            --logo-yellow: #f8db1f;
+            --logo-black: #0d1217;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(248, 219, 31, 0.4);
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.25s ease; }
+
+        body {
+            font-family: 'Tajawal', sans-serif; background-color: var(--bg-dark); color: var(--text-main);
+            min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px;
+        }
+
+        .portal-card {
+            background: var(--card-bg); width: 100%; max-width: 480px; border-radius: var(--radius);
+            box-shadow: 0 12px 50px rgba(0,0,0,0.8); border: 1px solid var(--border-glow); padding: 25px; backdrop-filter: blur(14px);
+        }
+
+        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .header img { width: 50px; height: auto; }
+        .header h2 { color: var(--logo-yellow); font-size: 18px; font-weight: 900; }
+
+        .form-section { display: flex; flex-direction: column; gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 14px; font-weight: 800; color: var(--logo-yellow); }
+
+        input, select {
+            width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+            font-family: inherit; font-size: 15px; background: rgba(0,0,0,0.5); color: #fff; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--logo-yellow); box-shadow: 0 0 12px rgba(248,219,31,0.4); }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--logo-yellow), #e0c21a); color: var(--logo-black);
+            border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 900; cursor: pointer; text-align: center;
+        }
+        .submit-btn:hover { box-shadow: 0 0 25px var(--logo-yellow); }
+
+        .driver-profile-header {
+            background: rgba(248, 219, 31, 0.1); border: 1px solid var(--logo-yellow); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+        }
+        .driver-avatar { width: 45px; height: 45px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 2px solid var(--logo-yellow); }
+
+        .back-link { display: inline-block; margin-top: 15px; color: var(--text-muted); font-size: 13px; text-decoration: none; text-align: center; width: 100%; }
+        .back-link:hover { color: var(--logo-yellow); }
+    </style>
+</head>
+<body>
+
+<div class="portal-card">
+    <div class="header">
+        <img src="https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png" alt="Logo">
+        <div>
+            <h2 id="portalTitle">🔐 لوحة تحكم السائق</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">أدخل رمز الـ PIN الخاص بحسابك لإدارة حالتك وموقعك</p>
+        </div>
+    </div>
+
+    <!-- STEP 1: LOGIN PIN -->
+    <div class="form-section" id="portalLoginView">
+        <div class="form-group">
+            <label>🔑 الرمز السري (PIN)</label>
+            <input type="password" id="portalPinInput" placeholder="أدخل الرمز السري" maxlength="6" style="text-align: center; font-size: 22px; letter-spacing: 6px;">
+        </div>
+        <button class="submit-btn" onclick="authenticateDriverPin()">دخول لوحة التحكم 🔓</button>
+    </div>
+
+    <!-- STEP 2: DASHBOARD -->
+    <div class="form-section" id="portalDashboardView" style="display: none;">
+        <div class="driver-profile-header">
+            <div class="driver-avatar" id="privAvatar">👨‍✈️</div>
+            <div style="flex-grow: 1;">
+                <h4 id="privName" style="color: #fff; font-size: 16px; font-weight: 800;">أيوب</h4>
+                <p id="privZoneText" style="color: var(--text-muted); font-size: 12px;">📍 الموقع الحالي</p>
+                <p id="privOrdersCount" style="color: var(--logo-yellow); font-size: 11px; font-weight: 800; margin-top: 2px;">🏆 الرصيد</p>
+            </div>
+            <button onclick="logoutDriverPortal()" style="background: rgba(255,77,77,0.15); border: 1px solid #ff4d4d; color: #ff4d4d; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer;">خروج 🚪</button>
+        </div>
+
+        <!-- زر تم التسليم -->
+        <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid #22c55e; border-radius: 12px; padding: 12px; text-align: center;">
+            <button class="submit-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; width: 100%; box-shadow: 0 0 15px rgba(34,197,94,0.3);" onclick="markAsDeliveredAndOnline()">
+                ✅ تم تسليم الطلب والعودة متوفر (Delivered)
+            </button>
+        </div>
+
+        <!-- زر إلغاء الطلب -->
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid #ef4444; border-radius: 12px; padding: 12px; text-align: center;">
+            <button class="submit-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; width: 100%;" onclick="cancelOrderAndRevert()">
+                ❌ الزبون لم يرد أو ألغى الطلب (Cancel)
+            </button>
+        </div>
+
+        <div class="form-group">
+            <label>📍 تحديث موقعك المباشر (اختر الحي)</label>
+            <select id="portalZoneSelect">
+                <option value="الوئام">الوئام</option>
+                <option value="محافير">محافير</option>
+                <option value="العدل">العدل</option>
+                <option value="لاديوان">لاديوان</option>
+                <option value="زرقلان">زرقلان</option>
+                <option value="حي 250 سكن">حي 250 سكن</option>
+                <option value="حي المجاهدين">حي المجاهدين</option>
+                <option value="المعمورة">المعمورة</option>
+                <option value="بن سحنون">بن سحنون</option>
+                <option value="المقطع القبلي">المقطع القبلي</option>
+                <option value="زقاق الطاقة">زقاق الطاقة</option>
+                <option value="سيدي يانس">سيدي يانس</option>
+                <option value="القيلان">القيلان</option>
+                <option value="زقاق الحجاج">زقاق الحجاج</option>
+                <option value="القابو">القابو</option>
+                <option value="الصوادق">الصوادق</option>
+                <option value="بو قفيفيلة">بو قفيفيلة</option>
+                <option value="خط الواد">خط الواد</option>
+                <option value="المقطع الضهراوي">المقطع الضهراوي</option>
+                <option value="زقاق النوار">زقاق النوار</option>
+                <option value="زقاق المدرسة">زقاق المدرسة</option>
+                <option value="كريبع">كريبع</option>
+                <option value="القربية">القربية</option>
+                <option value="الشطيط">الشطيط</option>
+                <option value="بن الهروي">بن الهروي</option>
+                <option value="المقدر">المقدر</option>
+                <option value="قصر الفروج">قصر الفروج</option>
+                <option value="قصر بوعامر">قصر بوعامر</option>
+                <option value="زقاق رزوق">زقاق رزوق</option>
+                <option value="الوحات الشمالية">الوحات الشمالية</option>
+                <option value="طريق 17">طريق 17</option>
+                <option value="حي 450 سكن">حي 450 سكن</option>
+                <option value="حي 400 سكن">حي 400 سكن</option>
+                <option value="حي 800 سكن">حي 800 سكن</option>
+                <option value="الاقامة البج">الاقامة البج</option>
+                <option value="اقامة العدل">اقامة العدل</option>
+                <option value="حي 600 سكن">حي 600 سكن</option>
+                <option value="المقام">المقام</option>
+                <option value="صنوبر">صنوبر</option>
+                <option value="البلاد">البلاد</option>
+                <option value="رحبة الزيتون">رحبة الزيتون</option>
+                <option value="المقطع">المقطع</option>
+                <option value="قصر البزائم وزوايمو">قصر البزائم وزوايمو</option>
+                <option value="لازون">لازون</option>
+                <option value="الضلعة">الضلعة</option>
+                <option value="لاسيليس">لاسيليس</option>
+            </select>
+        </div>
+
+        <button class="submit-btn" onclick="saveDriverLocationAndStatus()">حفظ وتحديث الموقع 📍</button>
+    </div>
+
+    <a href="index.html" class="back-link">← العودة إلى صفحة طلبات الزبائن الرئيسية</a>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz674jmMM4X8gZk9A_g0ZptClW7RYdf51_4N5_2j--G4MNCD-OX_tw2bsoC2neHPG36lw/exec";
+
+    let driversData = {
+        d1: { id: "d1", name: "أيوب", zone: "المعمورة", pin: "1122", status: "online", orders: 12, rating: "⭐ 4.9", avatar: "👨‍✈️" },
+        d2: { id: "d2", name: "نوح", zone: "المعمورة", pin: "3344", status: "online", orders: 8, rating: "⭐ 4.8", avatar: "🛵" },
+        d3: { id: "d3", name: "أيوب الوئام", zone: "الوئام", pin: "5566", status: "online", orders: 5, rating: "⭐ 4.9", avatar: "⚡" }
+    };
+
+    let authenticatedDriverKey = null;
+
+    function authenticateDriverPin() {
+        const pin = document.getElementById('portalPinInput').value.trim();
+        let foundKey = null;
+        Object.keys(driversData).forEach(k => { if (driversData[k].pin === pin) foundKey = k; });
+
+        if (foundKey) {
+            authenticatedDriverKey = foundKey;
+            document.getElementById('portalPinInput').value = '';
+            refreshDriverDashboardInfo();
+        } else {
+            alert("❌ الرمز السري غير صحيح!");
+        }
+    }
+
+    function refreshDriverDashboardInfo() {
+        if (!authenticatedDriverKey) return;
+        const d = driversData[authenticatedDriverKey];
+        document.getElementById('portalLoginView').style.display = 'none';
+        document.getElementById('portalDashboardView').style.display = 'flex';
+        document.getElementById('privAvatar').innerText = d.avatar;
+        document.getElementById('privName').innerText = d.name;
+        document.getElementById('privZoneText').innerText = `📍 المتواجد بـ: ${d.zone}`;
+        document.getElementById('privOrdersCount').innerText = `🏆 رصيدك: ${d.orders} طلب ناجح`;
+        document.getElementById('portalZoneSelect').value = d.zone;
+    }
+
+    function logoutDriverPortal() {
+        authenticatedDriverKey = null;
+        document.getElementById('portalLoginView').style.display = 'flex';
+        document.getElementById('portalDashboardView').style.display = 'none';
+    }
+
+    async function markAsDeliveredAndOnline() {
+        if (!authenticatedDriverKey) return;
+        const d = driversData[authenticatedDriverKey];
+        const zone = document.getElementById('portalZoneSelect').value;
+        d.status = 'online'; d.zone = zone;
+
+        alert("✅ تم تأكيد التسليم والعودة لحالة متوفر 🟢");
+        syncWithCloud(d, zone, 'online');
+        logoutDriverPortal();
+    }
+
+    async function cancelOrderAndRevert() {
+        if (!authenticatedDriverKey) return;
+        const d = driversData[authenticatedDriverKey];
+        const zone = document.getElementById('portalZoneSelect').value;
+        if (d.orders > 0) d.orders -= 1;
+        d.status = 'online'; d.zone = zone;
+
+        alert("⚠️ تم إلغاء الطلب وخصم النقطة وعودتك متوفراً 🟢");
+        syncWithCloud(d, zone, 'online');
+        logoutDriverPortal();
+    }
+
+    async function saveDriverLocationAndStatus() {
+        if (!authenticatedDriverKey) return;
+        const d = driversData[authenticatedDriverKey];
+        const zone = document.getElementById('portalZoneSelect').value;
+        d.zone = zone;
+
+        alert(`✅ تم تحديث موقعك إلى [${zone}] بنجاح!`);
+        syncWithCloud(d, zone, d.status);
+        logoutDriverPortal();
+    }
+
+    async function syncWithCloud(d, zone, status) {
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "updateDriver", driverKey: authenticatedDriverKey,
+                    name: d.name, status: status, zone: zone, orders: d.orders, lastOrder: `محدث`
+                })
+            });
+        } catch(e) {}
+    }
+</script>
+</body>
+</html>
