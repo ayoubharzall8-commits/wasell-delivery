@@ -354,10 +354,28 @@
         if (!authenticatedDriverKey) return;
         const d = driversData[authenticatedDriverKey];
         const zone = document.getElementById('portalZoneSelect').value;
-        d.status = 'online'; d.zone = zone;
+        d.status = 'online'; 
+        d.zone = zone;
 
         alert("✅ تم تأكيد التسليم بنجاح! عدت الآن لحالة متوفر 🟢");
-        syncWithCloud(d, zone, 'online');
+
+        // إرسال البيانات المحدثة مع تغيير حالة الطلب إلى "تم التسليم" في شيت الأوردات
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "updateDriver", 
+                    driverKey: authenticatedDriverKey,
+                    name: d.name, 
+                    status: 'online', 
+                    zone: zone, 
+                    orders: d.orders, 
+                    lastOrder: "تم تسليم الطلب بنجاح (Delivered)"
+                })
+            });
+        } catch(e) {}
+
         logoutDriverPortal();
     }
 
