@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wasell.com | وصيل الأغواط - خدمة التوصيل السريع</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Tajawal:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --card-bg: rgba(18, 24, 38, 0.9);
+            --logo-yellow: #f8db1f;
+            --logo-black: #0d1217;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(248, 219, 31, 0.4);
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        body {
+            font-family: 'Tajawal', 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 12px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
+
+        .audio-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(7, 9, 14, 0.98); backdrop-filter: blur(20px); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 25px;
+        }
+
+        .overlay-logo-container { margin-bottom: 20px; animation: bounceIn 1s ease-out; }
+        .overlay-logo { width: 180px; max-width: 80vw; height: auto; object-fit: contain; filter: drop-shadow(0 0 15px rgba(248, 219, 31, 0.6)); }
+
+        .audio-overlay h2 {
+            font-family: 'Orbitron', sans-serif; font-size: 28px; margin-bottom: 12px;
+            color: var(--logo-yellow); text-shadow: 0 0 15px var(--logo-yellow); animation: pulseGlow 3s infinite alternate;
+        }
+        .audio-overlay p { color: var(--text-muted); margin-bottom: 30px; max-width: 400px; font-size: 15px; line-height: 1.6; }
+
+        .btn-enter {
+            background: linear-gradient(135deg, var(--logo-yellow), #e0c21a); color: var(--logo-black);
+            border: none; padding: 16px 38px; border-radius: 30px; font-weight: 900; font-size: 17px;
+            cursor: pointer; box-shadow: 0 0 30px var(--logo-yellow); animation: bounce 2s infinite; position: relative; z-index: 10000;
+        }
+
+        .app-card {
+            background: var(--card-bg); width: 100%; max-width: 520px; border-radius: var(--radius);
+            box-shadow: 0 12px 50px 0 rgba(0, 0, 0, 0.8); border: 1px solid var(--border-glow);
+            padding: 28px 24px; backdrop-filter: blur(14px); animation: slideUp 0.6s ease-out; position: relative; z-index: 10;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .brand-info { display: flex; align-items: center; gap: 12px; }
+        .brand-icon-wrapper { position: relative; animation: float 3s ease-in-out infinite; }
+        .header-logo-img { width: 65px; height: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(248, 219, 31, 0.6)); }
+        .brand-text h1 { font-size: 18px; font-weight: 900; margin: 0; background: linear-gradient(135deg, #fff 0%, var(--logo-yellow) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-text p { font-size: 12px; margin: 2px 0 0 0; color: var(--text-muted); }
+
+        .top-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-main);
+            padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+        }
+        .ctrl-btn:hover { border-color: var(--logo-yellow); color: var(--logo-yellow); box-shadow: 0 0 12px rgba(248, 219, 31, 0.3); }
+        .ctrl-btn-highlight { background: rgba(248, 219, 31, 0.12); border-color: var(--logo-yellow); color: var(--logo-yellow); }
+        .ctrl-btn-download { background: linear-gradient(135deg, var(--logo-yellow), #e0c21a); color: var(--logo-black); border-color: var(--logo-yellow); font-weight: 900; }
+
+        .live-status-banner {
+            background: rgba(248, 219, 31, 0.08); border: 1px solid rgba(248, 219, 31, 0.3); border-radius: 12px;
+            padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 12px;
+        }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; margin-left: 6px; }
+
+        .form-section { display: flex; flex-direction: column; gap: 18px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 14px; font-weight: 800; color: var(--logo-yellow); letter-spacing: 0.3px; }
+
+        input, textarea, select {
+            width: 100%; padding: 13px 15px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+            font-family: inherit; font-size: 14px; background-color: rgba(0, 0, 0, 0.4); color: #fff; box-sizing: border-box; outline: none;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--logo-yellow); box-shadow: 0 0 12px rgba(248, 219, 31, 0.4); background-color: rgba(0, 0, 0, 0.6); }
+
+        .service-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .service-option {
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; text-align: center;
+            cursor: pointer; background: rgba(255, 255, 255, 0.03); color: var(--text-main);
+        }
+        .service-option.active { border-color: var(--logo-yellow); background: rgba(248, 219, 31, 0.1); color: var(--logo-yellow); box-shadow: 0 0 15px rgba(248, 219, 31, 0.25); }
+
+        .schedule-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px 14px; }
+        .schedule-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .schedule-inputs { display: none; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+
+        .driver-selector-trigger {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glow); border-radius: 14px; padding: 12px 16px;
+            cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s ease;
+        }
+        .driver-selector-trigger:hover { border-color: var(--logo-yellow); box-shadow: 0 0 15px rgba(248, 219, 31, 0.3); }
+        .selected-driver-preview { display: flex; align-items: center; gap: 12px; }
+        .arrow-icon { color: var(--logo-yellow); font-size: 14px; font-weight: 800; }
+
+        .driver-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(7, 9, 14, 0.95); backdrop-filter: blur(16px); z-index: 2000;
+            justify-content: center; align-items: center; padding: 12px;
+        }
+        .driver-modal-content {
+            background: var(--card-bg); border: 1px solid var(--logo-yellow); border-radius: 18px;
+            width: 100%; max-width: 840px; height: 92vh; display: flex; flex-direction: column;
+            padding: 20px; box-shadow: 0 0 50px rgba(248, 219, 31, 0.3); animation: scaleIn 0.3s ease-out;
+        }
+        .driver-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .driver-modal-header h3 { color: var(--logo-yellow); font-size: 16px; font-weight: 800; }
+        .close-btn { background: rgba(255, 255, 255, 0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; font-weight: 800; }
+
+        .driver-filter-container { margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .driver-filter-container input, .driver-filter-container select { flex: 1; min-width: 150px; }
+
+        .driver-full-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 8px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--logo-yellow) rgba(255,255,255,0.05);
+        }
+
+        .driver-mini-card {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(10, 15, 25, 0.85);
+            border-radius: 10px;
+            padding: 8px 5px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            height: 116px;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .driver-mini-card:hover {
+            border-color: var(--logo-yellow);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(248, 219, 31, 0.2);
+            background: rgba(248, 219, 31, 0.05);
+        }
+        .driver-mini-card.selected {
+            border-color: var(--logo-yellow);
+            background: linear-gradient(145deg, rgba(248, 219, 31, 0.2), rgba(18, 24, 38, 0.95));
+            box-shadow: 0 0 15px rgba(248, 219, 31, 0.35);
+        }
+        .driver-mini-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: var(--logo-yellow);
+            color: var(--logo-black);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            font-size: 8px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 1px solid var(--logo-yellow);
+        }
+
+        .mini-name {
+            font-size: 11px;
+            font-weight: 900;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .mini-zone-badge {
+            font-size: 8px;
+            font-weight: 800;
+            color: var(--logo-yellow);
+            background: rgba(248, 219, 31, 0.12);
+            border: 1px solid rgba(248, 219, 31, 0.3);
+            border-radius: 6px;
+            padding: 3px 4px;
+            width: 100%;
+            white-space: normal;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.2;
+        }
+
+        .status-badge { font-size: 7.5px; padding: 1px 5px; border-radius: 20px; font-weight: 800; display: inline-block; }
+        .status-badge.online { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
+        .status-badge.busy { background: rgba(255, 204, 0, 0.15); color: #ffcc00; border: 1px solid #ffcc00; }
+        .status-badge.offline { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid #ff4d4d; }
+
+        .leaderboard-item {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(248, 219, 31, 0.2); border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+        }
+        .rank-number { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; color: var(--logo-yellow); width: 28px; }
+
+        .pricing-box { background: rgba(248, 219, 31, 0.08); border: 1px dashed var(--logo-yellow); border-radius: 14px; padding: 16px; text-align: center; margin: 14px 0; }
+        .pricing-box h4 { color: var(--logo-yellow); font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+        .pricing-box p { font-size: 13px; color: var(--text-muted); }
+
+        .estimate-box {
+            background: rgba(248, 219, 31, 0.05); border: 1px dashed var(--logo-yellow); border-radius: 12px;
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-main);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--logo-yellow) 0%, #e0c21a 100%); color: var(--logo-black);
+            border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 900; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; box-shadow: 0 0 20px var(--logo-yellow);
+        }
+        .submit-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 0 35px var(--logo-yellow); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--logo-yellow); padding: 25px; border-radius: 20px; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 0 30px rgba(248, 219, 31, 0.3); }
+        .stars { font-size: 30px; margin: 15px 0; cursor: pointer; }
+        .star { color: #475569; }
+        .star.active { color: #e0c21a; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
+        @keyframes pulseGlow { 0% { text-shadow: 0 0 10px var(--logo-yellow); } 100% { text-shadow: 0 0 25px var(--logo-yellow); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+        @keyframes bounceIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        html[dir="ltr"] body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<audio id="audioWelcome" preload="none">
+    <source src="https://videotourl.com/audio/1792711072084-cf09110b-ea3a-49b8-961a-86c5f7c8b97d.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="bgAudio" loop preload="none">
+    <source src="https://videotourl.com/audio/1792711483708-9b169d43-33aa-49a4-9818-086f90e71422.mp3" type="audio/mpeg">
+</audio>
+
+<div id="audioOverlay" class="audio-overlay">
+    <div class="overlay-logo-container">
+        <img src="https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png" alt="WASELL.COM Logo" class="overlay-logo">
+    </div>
+    <h2>⚡ WASELL.COM 🛵</h2>
+    <p>مرحباً بك في وصيل الأغواط! اضغط أدناه لدخول الموقع وتفعيل التجربة.</p>
+    <button class="btn-enter" onclick="startExperience(event)">🚀 دخول واكتشاف الخدمة</button>
+</div>
+
+<div class="app-card">
+    <div class="header">
+        <div class="brand-info">
+            <div class="brand-icon-wrapper">
+                <img src="https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png" alt="WASELL.COM Logo" class="header-logo-img">
+            </div>
+            <div class="brand-text">
+                <h1 id="txt-title">WASELL.COM | وصيل الأغواط</h1>
+                <p id="txt-subtitle">اختر طلبك وسنقوم بتوصيله فوراً</p>
+            </div>
+        </div>
+        <div class="top-controls">
+            <a href="https://apk.e-droid.net/apk/app4227182-4vbmwg.apk?v=2" class="ctrl-btn ctrl-btn-download" title="تحميل تطبيق الأندرويد">📲 تحميل التطبيق</a>
+            <button class="ctrl-btn ctrl-btn-highlight" onclick="openLeaderboard()" title="متصدري السائقين">🏆 المتصدرين</button>
+            <button class="ctrl-btn" onclick="openJoinModal()" title="انضمام السائقين">🛵 انضم كسائق</button>
+            <button class="ctrl-btn" onclick="toggleAudio()"><span id="audioIcon">🔊</span></button>
+            <button class="ctrl-btn" onclick="toggleLanguage()"><span id="lang-label">English</span></button>
+        </div>
+    </div>
+
+    <!-- Live Status Capacity Banner -->
+    <div class="live-status-banner">
+        <div>
+            <span class="status-dot"></span>
+            <span style="font-weight: 800; color: #fff;">حالة التغطية الآن:</span>
+            <span id="bannerOnlineDriversCount" style="color: var(--logo-yellow); font-weight: 800;">جاري التحميل...</span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 11px;" id="bannerActiveZoneText">📍 جاري التحديث</div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-group">
+            <label id="lbl-type">📦 نوع الطلب / الخدمة</label>
+            <div class="service-grid">
+                <div class="service-option active" onclick="selectType(this, 'وجبات ومأكولات', 'Food & Meals')">
+                    <span style="font-size: 24px;">🍔</span><br>
+                    <span class="type-txt" data-ar="وجبات ومأكولات" data-en="Food & Meals">وجبات ومأكولات</span>
+                </div>
+                <div class="service-option" onclick="selectType(this, 'مشتريات وقضيان', 'Groceries')">
+                    <span style="font-size: 24px;">🛒</span><br>
+                    <span class="type-txt" data-ar="مشتريات وقضيان" data-en="Groceries">مشتريات وقضيان</span>
+                </div>
+                <div class="service-option" onclick="selectType(this, 'وثائق وطرود', 'Documents / Packages')">
+                    <span style="font-size: 24px;">📄</span><br>
+                    <span class="type-txt" data-ar="وثائق وطرود" data-en="Documents / Packages">وثائق وطرود</span>
+                </div>
+                <div class="service-option" onclick="selectType(this, 'طلب خاص', 'Custom Request')">
+                    <span style="font-size: 24px;">✨</span><br>
+                    <span class="type-txt" data-ar="طلب خاص" data-en="Custom Request">طلب خاص</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label id="lbl-details">📝 تفاصيل الطلب</label>
+            <textarea id="orderDetails" rows="2" placeholder="ماذا تريد أن نحضر لك؟"></textarea>
+        </div>
+
+        <div class="schedule-box">
+            <div class="schedule-header" onclick="toggleScheduleInputs()">
+                <span style="font-size: 13px; font-weight: 800; color: var(--logo-yellow);">📅 جدولة الطلب بوقت لاحق (اختياري)</span>
+                <span id="scheduleToggleIcon" style="color: var(--logo-yellow);">▼</span>
+            </div>
+            <div class="schedule-inputs" id="scheduleInputs">
+                <div>
+                    <label style="font-size: 11px;">تاريخ التوصيل</label>
+                    <input type="date" id="scheduleDate">
+                </div>
+                <div>
+                    <label style="font-size: 11px;">وقت التوصيل</label>
+                    <input type="time" id="scheduleTime">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label id="lbl-name">👤 الاسم الكامل</label>
+            <input type="text" id="customerName" placeholder="أدخل اسمك">
+        </div>
+
+        <div class="form-group">
+            <label id="lbl-phone">📞 رقم الهاتف</label>
+            <input type="tel" id="customerPhone" placeholder="05XXXXXXXX">
+        </div>
+
+        <div class="form-group">
+            <label id="lbl-address">📍 عنوان التوصيل</label>
+            <textarea id="deliveryAddress" rows="2" placeholder="المدينة، الحي، الشارع..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label id="lbl-driver">🛵 اختر سائق التوصيل</label>
+            <div class="driver-selector-trigger" onclick="openDriverModal()">
+                <div class="selected-driver-preview">
+                    <div class="driver-avatar" id="triggerAvatar">👨‍✈️</div>
+                    <div class="driver-details">
+                        <h4 id="triggerName">أيوب</h4>
+                    </div>
+                </div>
+                <span class="arrow-icon">▼ اختر السائق</span>
+            </div>
+        </div>
+
+        <div class="estimate-box">
+            <span>⏱️ الوقت المتوقع: <b id="estTime" style="color: #fff;">20 - 30 دقيقة</b></span>
+            <span>💵 التكلفة المقدرة: <b id="estFee" style="color: var(--logo-yellow);">200 دج</b></span>
+        </div>
+
+        <button class="submit-btn" onclick="sendOrder()">
+            <span>🚀</span>
+            <span id="txt-btn">إرسال الطلب والتسجيل</span>
+        </button>
+    </div>
+</div>
+
+<!-- Full-Screen Driver Selection Modal -->
+<div id="driverModal" class="driver-modal">
+    <div class="driver-modal-content">
+        <div class="driver-modal-header">
+            <h3>🛵 قائمة السائقين النشطين (اختر سائقك)</h3>
+            <button class="close-btn" onclick="closeDriverModal()">✕</button>
+        </div>
+        
+        <div class="driver-filter-container">
+            <input type="text" id="driverSearchInput" placeholder="🔍 ابحث باسم السائق أو الحي..." oninput="filterDriversList()" style="padding: 10px 14px; font-size: 13px;">
+            
+            <select id="zoneDropdownFilter" onchange="filterDriversByDropdown(this.value)" style="padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; outline: none;">
+                <option value="الكل">📍 عرض كل الأحياء والسائقين</option>
+                <option value="الوئام">الوئام</option>
+                <option value="محافير">محافير</option>
+                <option value="العدل">العدل</option>
+                <option value="لاديوان">لاديوان</option>
+                <option value="زرقلان">زرقلان</option>
+                <option value="حي 250 سكن">حي 250 سكن</option>
+                <option value="حي المجاهدين">حي المجاهدين</option>
+                <option value="المعمورة">المعمورة</option>
+                <option value="بن سحنون">بن سحنون</option>
+                <option value="المقطع القبلي">المقطع القبلي</option>
+                <option value="زقاق الطاقة">زقاق الطاقة</option>
+                <option value="سيدي يانس">سيدي يانس</option>
+                <option value="القيلان">القيلان</option>
+                <option value="زقاق الحجاج">زقاق الحجاج</option>
+                <option value="القابو">القابو</option>
+                <option value="الصوادق">الصوادق</option>
+                <option value="بو قفيفيلة">بو قفيفيلة</option>
+                <option value="خط الواد">خط الواد</option>
+                <option value="المقطع الضهراوي">المقطع الضهراوي</option>
+                <option value="زقاق النوار">زقاق النوار</option>
+                <option value="زقاق المدرسة">زقاق المدرسة</option>
+                <option value="كريبع">كريبع</option>
+                <option value="القربية">القربية</option>
+                <option value="الشطيط">الشطيط</option>
+                <option value="بن الهروي">بن الهروي</option>
+                <option value="المقدر">المقدر</option>
+                <option value="قصر الفروج">قصر الفروج</option>
+                <option value="قصر بوعامر">قصر بوعامر</option>
+                <option value="زقاق رزوق">زقاق رزوق</option>
+                <option value="الوحات الشمالية">الوحات الشمالية</option>
+                <option value="طريق 17">طريق 17</option>
+                <option value="حي 450 سكن">حي 450 سكن</option>
+                <option value="حي 400 سكن">حي 400 سكن</option>
+                <option value="حي 800 سكن">حي 800 سكن</option>
+                <option value="الاقامة البج">الاقامة البج</option>
+                <option value="اقامة العدل">اقامة العدل</option>
+                <option value="حي 600 سكن">حي 600 سكن</option>
+                <option value="المقام">المقام</option>
+                <option value="صنوبر">صنوبر</option>
+                <option value="البلاد">البلاد</option>
+                <option value="رحبة الزيتون">رحبة الزيتون</option>
+                <option value="المقطع">المقطع</option>
+                <option value="قصر البزائم وزوايمو">قصر البزائم وزوايمو</option>
+                <option value="لازون">لازون</option>
+                <option value="الضلعة">الضلعة</option>
+                <option value="لاسيليس">لاسيليس</option>
+            </select>
+        </div>
+        
+        <div class="driver-full-grid" id="driverCardsList"></div>
+    </div>
+</div>
+
+<!-- Leaderboard Modal -->
+<div id="leaderboardModal" class="driver-modal">
+    <div class="driver-modal-content">
+        <div class="driver-modal-header">
+            <h3>🏆 متصدري السائقين المباشر</h3>
+            <button class="close-btn" onclick="closeLeaderboard()">✕</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 14px;">يتم ترتيب السائقين تلقائياً حسب عدد الطلبات الناجحة المكتملة هذا الشهر!</p>
+        <div id="leaderboardList" style="overflow-y: auto; flex: 1;"></div>
+    </div>
+</div>
+
+<!-- Driver Paid Onboarding Modal -->
+<div id="joinModal" class="driver-modal">
+    <div class="driver-modal-content">
+        <div class="driver-modal-header">
+            <h3>🛵 انضم إلى شبكة سائقي واصل الأغواط</h3>
+            <button class="close-btn" onclick="closeJoinModal()">✕</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">احصل على طلبات توصيل يومية مباشرة من الزبائن في منطقتك!</p>
+        <div class="pricing-box">
+            <h4>1000 دج / شهرياً</h4>
+            <p>اشتراك شهر كامل - ظهور دائم للزبائن واستلام مباشر للطلبات</p>
+        </div>
+        <div class="form-section">
+            <div class="form-group">
+                <label>👤 الاسم واللقب</label>
+                <input type="text" id="regDriverName" placeholder="أدخل اسمك الكامل">
+            </div>
+            <div class="form-group">
+                <label>📞 رقم الهاتف / الواتساب</label>
+                <input type="tel" id="regDriverPhone" placeholder="06XXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label>📍 المنطقة المتواجد بها حالياً</label>
+                <input type="text" id="regDriverZone" placeholder="مثال: المعمورة، وسط المدينة...">
+            </div>
+            <div class="form-group">
+                <label>🛵 نوع وسيلة النقل</label>
+                <select id="regVehicle">
+                    <option value="دراجة نارية (Scooter)">دراجة نارية (Scooter)</option>
+                    <option value="سيارة (Car)">سيارة (Car)</option>
+                    <option value="دراجة هوائية (Bike)">دراجة هوائية (Bike)</option>
+                </select>
+            </div>
+            <button class="submit-btn" style="width: 100%;" onclick="submitDriverRegistration()">
+                <span>📲</span>
+                <span>إرسال طلب الانضمام والإثبات</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="ratingModal" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--logo-yellow);">🎉 تم إرسال طلبك بنجاح!</h3>
+        <p style="color: var(--text-muted); margin-top: 8px; font-size: 14px;">تقييمك يهمنا! كيف كانت تجربتك السابقة مع سائقينا؟</p>
+        <div class="stars">
+            <span class="star" onclick="setRating(1)">★</span>
+            <span class="star" onclick="setRating(2)">★</span>
+            <span class="star" onclick="setRating(3)">★</span>
+            <span class="star" onclick="setRating(4)">★</span>
+            <span class="star" onclick="setRating(5)">★</span>
+        </div>
+        <button class="submit-btn" style="width: 100%; margin-top: 10px;" onclick="closeModal()">شكراً لك 👍</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const particles = Array.from({ length: 40 }, () => ({
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        radius: Math.random() * 2 + 0.5, speedY: (Math.random() - 0.5) * 0.7,
+        speedX: (Math.random() - 0.5) * 0.7, color: '#f8db1f', alpha: Math.random() * 0.5 + 0.1
+    }));
+
+    function animateBg() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.x += p.speedX; p.y += p.speedY;
+            if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+            if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fill();
+        });
+        requestAnimationFrame(animateBg);
+    }
+    animateBg();
+
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz674jmMM4X8gZk9A_g0ZptClW7RYdf51_4N5_2j--G4MNCD-OX_tw2bsoC2neHPG36lw/exec";
+    const ADMIN_WHATSAPP = "213673795163";
+
+    let driversData = {
+        d1: { id: "d1", name: "أيوب", zone: "المعمورة", phone: "213673795163", tel: "0673795163", fee: "200 دج", time: "20 - 30 دقيقة", avatar: "👨‍✈️", rating: "⭐ 4.9", status: "online", orders: 12 },
+        d2: { id: "d2", name: "نوح", zone: "المعمورة", phone: "213673956055", tel: "0673956055", fee: "200 دج", time: "15 - 25 دقيقة", avatar: "🛵", rating: "⭐ 4.8", status: "online", orders: 8 },
+        d3: { id: "d3", name: "أيوب الوئام", zone: "الوئام", phone: "213673795163", tel: "0673795163", fee: "250 دج", time: "25 - 35 دقيقة", avatar: "⚡", rating: "⭐ 4.9", status: "online", orders: 5 }
+    };
+
+    let selectedDriverId = "d1";
+    let currentZoneFilter = "الكل";
+
+    // 💾 حفظ الجلسة ومنع تسجيل الخروج التلقائي للسائق
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedDriver = localStorage.getItem('wasell_selected_driver');
+        if (savedDriver && driversData[savedDriver]) {
+            selectedDriverId = savedDriver;
+            chooseDriver(selectedDriverId);
+        }
+    });
+
+    async function fetchDriversFromSheet() {
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL);
+            const cloudData = await res.json();
+            if (cloudData && Object.keys(cloudData).length > 0) {
+                Object.keys(cloudData).forEach(k => {
+                    if (driversData[k]) {
+                        driversData[k].status = cloudData[k].status || driversData[k].status;
+                        driversData[k].zone = cloudData[k].zone || driversData[k].zone;
+                        driversData[k].orders = cloudData[k].orders !== undefined ? cloudData[k].orders : driversData[k].orders;
+                    }
+                });
+                renderDriverCards();
+                renderLeaderboard();
+            }
+        } catch(e) {}
+    }
+
+    setInterval(fetchDriversFromSheet, 6000);
+    fetchDriversFromSheet();
+
+    function updateLiveBanner() {
+        let onlineCount = 0; let zones = new Set();
+        Object.values(driversData).forEach(d => { if (d.status === 'online') { onlineCount++; zones.add(d.zone); } });
+        document.getElementById('bannerOnlineDriversCount').innerText = `${onlineCount} سائقين متوفرين`;
+        document.getElementById('bannerActiveZoneText').innerText = zones.size > 0 ? `📍 متواجدون في: ${Array.from(zones).join('، ')}` : '📍 لا يوجد سائقون الآن';
+    }
+
+    function normalizeText(text) {
+        if (!text) return '';
+        return text.toLowerCase()
+            .replace(/(أ|إ|آ)/g, 'ا')
+            .replace(/ة/g, 'ه')
+            .replace(/^ال/, '')
+            .trim();
+    }
+
+    function renderDriverCards() {
+        const container = document.getElementById('driverCardsList');
+        const rawSearchInput = document.getElementById('driverSearchInput') ? document.getElementById('driverSearchInput').value : '';
+        const cleanSearch = normalizeText(rawSearchInput);
+        container.innerHTML = '';
+
+        let matchCount = 0;
+
+        Object.keys(driversData).forEach(id => {
+            const d = driversData[id];
+            const cleanName = normalizeText(d.name);
+            const cleanZone = normalizeText(d.zone);
+
+            const matchesZone = (currentZoneFilter === 'الكل' || d.zone.includes(currentZoneFilter));
+            const matchesSearch = cleanName.includes(cleanSearch) || cleanZone.includes(cleanSearch);
+            
+            if (!matchesZone || !matchesSearch) return;
+
+            matchCount++;
+            const isSel = id === selectedDriverId ? 'selected' : '';
+            
+            let badgeHtml = '<span class="status-badge online">🟢 متوفر</span>';
+            if (d.status === 'busy') badgeHtml = '<span class="status-badge busy">🟡 مشغول</span>';
+            if (d.status === 'offline') badgeHtml = '<span class="status-badge offline">🔴 غير متوفر</span>';
+
+            const card = document.createElement('div');
+            card.className = `driver-mini-card ${isSel}`;
+            card.onclick = () => chooseDriver(id);
+            card.innerHTML = `
+                <div class="mini-avatar">${d.avatar}</div>
+                <div class="mini-name" title="${d.name}">${d.name}</div>
+                <div class="mini-zone-badge" title="متواجد في ${d.zone}">متواجد في ${d.zone}</div>
+                ${badgeHtml}
+            `;
+            container.appendChild(card);
+        });
+
+        if (matchCount === 0) {
+            container.style.gridTemplateColumns = '1fr';
+            container.innerHTML = `
+                <div style="text-align: center; padding: 25px; color: var(--text-muted); grid-column: 1 / -1;">
+                    <p style="font-size: 14px; margin-bottom: 10px;">🔍 لم نجد نتائج مطابقة لـ "<b>${rawSearchInput}</b>"</p>
+                    <button onclick="resetSearchFilter()" class="ctrl-btn ctrl-btn-highlight" style="font-size: 12px; padding: 8px 16px;">إلغاء التصفية وعرض الكل 🛵</button>
+                </div>
+            `;
+        } else {
+            container.style.gridTemplateColumns = '';
+        }
+
+        updateLiveBanner();
+    }
+
+    function renderLeaderboard() {
+        const container = document.getElementById('leaderboardList');
+        if (!container) return;
+        const sortedDrivers = Object.values(driversData).sort((a, b) => (b.orders || 0) - (a.orders || 0));
+        container.innerHTML = '';
+        sortedDrivers.forEach((d, idx) => {
+            const rank = idx + 1;
+            let badgeTxt = 'خصم 25% 🥉'; let color = '#a855f7';
+            if (rank === 1) { badgeTxt = 'إعفاء 100% 🎁'; color = 'var(--logo-yellow)'; }
+            else if (rank === 2) { badgeTxt = 'خصم 50% 🎖️'; color = '#e2e8f0'; }
+
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="rank-number" style="color: ${color};">#${rank}</span>
+                    <div>
+                        <h4 style="font-size: 14px; color: #fff;">${d.name}</h4>
+                        <p style="font-size: 11px; color: var(--text-muted);">📍 ${d.zone} • ${d.orders || 0} طلب ناجح</p>
+                    </div>
+                </div>
+                <span style="color: ${color}; font-weight: 800; font-size: 11px;">${badgeTxt}</span>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    renderDriverCards();
+    renderLeaderboard();
+
+    function filterDriversByDropdown(zoneValue) {
+        currentZoneFilter = zoneValue;
+        renderDriverCards();
+    }
+
+    function resetSearchFilter() {
+        currentZoneFilter = 'الكل';
+        document.getElementById('zoneDropdownFilter').value = 'الكل';
+        document.getElementById('driverSearchInput').value = '';
+        renderDriverCards();
+    }
+
+    function filterDriversList() { renderDriverCards(); }
+
+    function chooseDriver(id) {
+        selectedDriverId = id;
+        localStorage.setItem('wasell_selected_driver', id); // 💾 يبقى مسجلاً دائماً
+        const d = driversData[id];
+        document.getElementById('estFee').innerText = d.fee;
+        document.getElementById('estTime').innerText = d.time;
+        document.getElementById('triggerAvatar').innerText = d.avatar;
+        document.getElementById('triggerName').innerText = d.name;
+        renderDriverCards();
+        closeDriverModal();
+    }
+
+    function toggleScheduleInputs() {
+        const el = document.getElementById('scheduleInputs');
+        const icon = document.getElementById('scheduleToggleIcon');
+        if (el.style.display === 'grid') { el.style.display = 'none'; icon.innerText = '▼'; }
+        else { el.style.display = 'grid'; icon.innerText = '▲'; }
+    }
+
+    function openLeaderboard() { renderLeaderboard(); document.getElementById('leaderboardModal').style.display = 'flex'; }
+    function closeLeaderboard() { document.getElementById('leaderboardModal').style.display = 'none'; }
+    function openDriverModal() { document.getElementById('driverModal').style.display = 'flex'; }
+    function closeDriverModal() { document.getElementById('driverModal').style.display = 'none'; }
+    function openJoinModal() { document.getElementById('joinModal').style.display = 'flex'; }
+    function closeJoinModal() { document.getElementById('joinModal').style.display = 'none'; }
+
+    let currentLang = 'ar';
+    let selectedCategoryAr = 'وجبات ومأكولات';
+    let selectedCategoryEn = 'Food & Meals';
+    let isPlaying = false;
+    let currentAudio = document.getElementById('audioWelcome');
+
+    function startExperience(e) {
+        if(e) e.stopPropagation();
+        document.getElementById('audioOverlay').style.display = 'none';
+        try { currentAudio.play(); isPlaying = true; } catch(err) {}
+    }
+
+    function toggleAudio() {
+        if (isPlaying) { currentAudio.pause(); isPlaying = false; document.getElementById('audioIcon').innerText = '🔇'; }
+        else { currentAudio.play(); isPlaying = true; document.getElementById('audioIcon').innerText = '🔊'; }
+    }
+
+    function selectType(element, nameAr, nameEn) {
+        document.querySelectorAll('.service-option').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        selectedCategoryAr = nameAr; selectedCategoryEn = nameEn;
+    }
+
+    function submitDriverRegistration() {
+        const name = document.getElementById('regDriverName').value.trim();
+        const phone = document.getElementById('regDriverPhone').value.trim();
+        const zone = document.getElementById('regDriverZone').value.trim();
+        if (!name || !phone || !zone) { alert("يرجى ملء كافة بيانات التسجيل!"); return; }
+        let msg = `*طلب انضمام سائق جديد - WASELL.COM* 🛵\n\n👤 الاسم: ${name}\n📞 الهاتف: ${phone}\n📍 المنطقة: ${zone}`;
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=` + encodeURIComponent(msg), "_blank");
+        closeJoinModal();
+    }
+
+    const translations = {
+        ar: { title: "WASELL.COM | وصيل الأغواط", subtitle: "اختر طلبك وسنقوم بتوصيله فوراً", btnSubmit: "إرسال الطلب والتسجيل", langBtn: "English", alertFill: "يرجى ملء جميع البيانات المطلوبة!" },
+        en: { title: "WASELL.COM | Laghouat Delivery", subtitle: "Select your request and we will deliver it fast", btnSubmit: "Send Order to Driver", langBtn: "عربي", alertFill: "Please fill in all required details!" }
+    };
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        const t = translations[currentLang];
+        document.documentElement.setAttribute('lang', currentLang);
+        document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+        document.getElementById('txt-title').innerText = t.title;
+        document.getElementById('txt-subtitle').innerText = t.subtitle;
+        document.getElementById('txt-btn').innerText = t.btnSubmit;
+        document.getElementById('lang-label').innerText = t.langBtn;
+    }
+
+    async function sendOrder() {
+        const details = document.getElementById("orderDetails").value.trim();
+        const name = document.getElementById("customerName").value.trim();
+        const phone = document.getElementById("customerPhone").value.trim();
+        const address = document.getElementById("deliveryAddress").value.trim();
+        const schedDate = document.getElementById("scheduleDate").value;
+        const schedTime = document.getElementById("scheduleTime").value;
+
+        if (!name || !phone || !address) { alert(translations[currentLang].alertFill); return; }
+
+        const category = currentLang === 'ar' ? selectedCategoryAr : selectedCategoryEn;
+        const activeDriver = driversData[selectedDriverId];
+
+        activeDriver.orders = (activeDriver.orders || 0) + 1;
+        activeDriver.status = 'busy';
+
+        let schedTxt = "توصيل فورى ⚡";
+        if (schedDate && schedTime) schedTxt = `مجدول بتاريخ ${schedDate} الساعة ${schedTime}`;
+
+        try {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "newOrder", name, phone, address, category, details,
+                    driverKey: selectedDriverId, driverName: `${activeDriver.name} (${activeDriver.zone})`,
+                    schedule: schedTxt, orders: activeDriver.orders, status: "جاري التوصيل"
+                })
+            });
+        } catch (e) {}
+
+        let message = `NEW DELIVERY ORDER - WASELL.COM\n\nName: ${name}\nPhone: ${phone}\nAddress: ${address}\nCategory: ${category}\nTime: ${schedTxt}\nDriver: ${activeDriver.name}\n`;
+        if (details) message += `Details: ${details}\n`;
+
+        window.location.href = `https://wa.me/${activeDriver.phone}?text=` + encodeURIComponent(message);
+
+        setTimeout(() => { document.getElementById('ratingModal').style.display = 'flex'; }, 1500);
+    }
+
+    function setRating(n) {
+        document.querySelectorAll('.star').forEach((s, idx) => {
+            if (idx < n) s.classList.add('active'); else s.classList.remove('active');
+        });
+    }
+    function closeModal() { document.getElementById('ratingModal').style.display = 'none'; }
+</script>
+</body>
+</html>
