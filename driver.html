@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wasell.com | لوحة تحكم السائق الخاصة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Tajawal:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <title>WASELL.COM | لوحة تحكم السائق</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #07090e;
@@ -14,217 +14,114 @@
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --border-glow: rgba(248, 219, 31, 0.4);
-            --radius: 20px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; transition: all 0.25s ease; }
 
         body {
-            font-family: 'Tajawal', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
-            overflow-x: hidden;
-            position: relative;
+            padding: 20px 15px;
         }
-
-        #bgCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
 
         .portal-card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 460px;
-            border-radius: var(--radius);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(248, 219, 31, 0.15);
+            max-width: 440px;
+            border-radius: 20px;
             border: 1px solid var(--border-glow);
-            padding: 28px 22px;
-            backdrop-filter: blur(16px);
-            position: relative;
-            z-index: 10;
-            animation: slideUp 0.5s ease-out;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            text-align: center;
         }
 
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 22px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .header h2 { color: var(--logo-yellow); font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+        .header p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
 
-        .header-logo {
-            width: 55px;
-            height: auto;
-            object-fit: contain;
-            filter: drop-shadow(0 0 10px rgba(248, 219, 31, 0.5));
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .header h2 {
-            color: var(--logo-yellow);
-            font-size: 19px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-
-        .header p {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 3px;
-        }
-
-        .form-section { display: flex; flex-direction: column; gap: 16px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-
-        label {
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--logo-yellow);
-            letter-spacing: 0.3px;
-        }
+        .form-group { text-align: right; margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 800; color: var(--logo-yellow); margin-bottom: 6px; }
 
         input, select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            font-family: inherit;
-            font-size: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            outline: none;
+            width: 100%; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px; font-size: 14px; background: rgba(0, 0, 0, 0.5); color: #fff; outline: none;
         }
+        input:focus, select:focus { border-color: var(--logo-yellow); box-shadow: 0 0 12px rgba(248, 219, 31, 0.3); }
 
-        input:focus, select:focus {
-            border-color: var(--logo-yellow);
-            box-shadow: 0 0 15px rgba(248, 219, 31, 0.35);
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        .submit-btn {
+        .btn-primary {
             background: linear-gradient(135deg, var(--logo-yellow), #e0c21a);
-            color: var(--logo-black);
-            border: none;
-            padding: 15px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 0 20px rgba(248, 219, 31, 0.3);
+            color: var(--logo-black); border: none; padding: 14px; width: 100%;
+            border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer;
+            box-shadow: 0 0 15px rgba(248, 219, 31, 0.3); margin-top: 10px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(248, 219, 31, 0.5); }
+
+        .status-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+        .status-btn {
+            padding: 12px 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03); color: #fff; cursor: pointer; font-size: 12px; font-weight: 800;
+        }
+        .status-btn.online.active { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #22c55e; }
+        .status-btn.busy.active { background: rgba(255, 204, 0, 0.2); border-color: #ffcc00; color: #ffcc00; }
+        .status-btn.offline.active { background: rgba(255, 77, 77, 0.2); border-color: #ff4d4d; color: #ff4d4d; }
+
+        .driver-badge-info {
+            background: rgba(248, 219, 31, 0.08); border: 1px solid rgba(248, 219, 31, 0.3);
+            border-radius: 14px; padding: 14px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; text-align: right;
+        }
+        .driver-avatar-lg { font-size: 32px; }
+
+        .logout-link {
+            display: inline-block; margin-top: 18px; color: #ff4d4d; font-size: 12px;
+            font-weight: 700; cursor: pointer; text-decoration: underline;
         }
 
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(248, 219, 31, 0.5);
-        }
-
-        .driver-profile-header {
-            background: rgba(248, 219, 31, 0.08);
-            border: 1px solid var(--logo-yellow);
-            border-radius: 14px;
-            padding: 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 6px;
-        }
-
-        .driver-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            border: 2px solid var(--logo-yellow);
-            box-shadow: 0 0 10px rgba(248, 219, 31, 0.3);
-        }
-
-        .action-box-green {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid #22c55e;
-            border-radius: 14px;
-            padding: 12px;
-        }
-
-        .action-box-red {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid #ef4444;
-            border-radius: 14px;
-            padding: 12px;
-        }
-
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        #loginSection, #dashboardSection { display: none; }
     </style>
 </head>
 <body>
 
-<canvas id="bgCanvas"></canvas>
-
 <div class="portal-card">
     <div class="header">
-        <img src="https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png" alt="WASELL Logo" class="header-logo">
-        <div>
-            <h2 id="portalTitle">🔐 لوحة السائق الخاصة</h2>
-            <p>نظام إدارة الحالة والموقع المباشر في الميدان</p>
-        </div>
+        <h2>🛵 بوابة سائقي واصل الأغواط</h2>
+        <p>تحديث الحالة والمنطقة في الوقت المباشر</p>
     </div>
 
-    <!-- الخطوة 1: تسجيل الدخول برمز PIN -->
-    <div class="form-section" id="portalLoginView">
+    <!-- 🔒 شاشة تسجيل الدخول (تظهر فقط أول مرة) -->
+    <div id="loginSection">
         <div class="form-group">
-            <label>🔑 أدخل الرمز السري (PIN)</label>
-            <input type="password" id="portalPinInput" placeholder="••••" maxlength="6" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
+            <label>🔑 أدخل رمز PIN الخاص بك</label>
+            <input type="password" id="pinInput" placeholder="أدخل الرمز السرّي..." maxlength="6">
         </div>
-        <button class="submit-btn" style="width: 100%; margin-top: 6px;" onclick="authenticateDriverPin()">
-            <span>🔓</span>
-            <span>دخول لوحة التحكم الآمنة</span>
-        </button>
+        <button class="btn-primary" onclick="loginDriver()">دخول البوابة 🚀</button>
     </div>
 
-    <!-- الخطوة 2: لوحة التحكم الخاصة بالسائق -->
-    <div class="form-section" id="portalDashboardView" style="display: none;">
-        <div class="driver-profile-header">
-            <div class="driver-avatar" id="privAvatar">👨‍✈️</div>
-            <div style="flex-grow: 1;">
-                <h4 id="privName" style="color: #fff; font-size: 16px; font-weight: 800;">أيوب</h4>
-                <p id="privZoneText" style="color: var(--text-muted); font-size: 12px;">📍 متواجد بـ: المعمورة</p>
-                <p id="privOrdersCount" style="color: var(--logo-yellow); font-size: 11px; font-weight: 800; margin-top: 2px;">🏆 الرصيد: 0 طلب</p>
+    <!-- ⚡ شاشة التحكم (تبقى مفتوحة دائماً دون خروج) -->
+    <div id="dashboardSection">
+        <div class="driver-badge-info">
+            <div class="driver-avatar-lg" id="driverAvatar">👨‍✈️</div>
+            <div>
+                <h3 id="driverName" style="color: #fff; font-size: 16px; font-weight: 900;">-</h3>
+                <p style="color: var(--text-muted); font-size: 12px;" id="driverCurrentZoneDisplay">📍 -</p>
             </div>
-            <button onclick="logoutDriverPortal()" style="background: rgba(255,77,77,0.15); border: 1px solid #ff4d4d; color: #ff4d4d; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer;">خروج 🚪</button>
-        </div>
-
-        <!-- زر تسليم الطلب العائد للوضع متوفر -->
-        <div class="action-box-green">
-            <button class="submit-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; width: 100%; box-shadow: 0 0 15px rgba(34,197,94,0.3);" onclick="markAsDeliveredAndOnline()">
-                <span>✅</span>
-                <span>تم تسليم الطلب والعودة متوفر (Delivered)</span>
-            </button>
-        </div>
-
-        <!-- زر إلغاء الطلب والتراجع عن النقطة -->
-        <div class="action-box-red">
-            <button class="submit-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; width: 100%; box-shadow: none;" onclick="cancelOrderAndRevert()">
-                <span>❌</span>
-                <span>الزبون لم يرد أو ألغى الطلب (Cancel)</span>
-            </button>
         </div>
 
         <div class="form-group">
-            <label>📍 تحديث موقعك المباشر في الميدان</label>
-            <select id="portalZoneSelect">
+            <label>🟢 تفعيل الحالة الآن</label>
+            <div class="status-options">
+                <button class="status-btn online" onclick="setStatus('online')">🟢 متوفر</button>
+                <button class="status-btn busy" onclick="setStatus('busy')">🟡 مشغول</button>
+                <button class="status-btn offline" onclick="setStatus('offline')">🔴 غائب</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 18px;">
+            <label>📍 تحديث مكان التواجد (الحي)</label>
+            <select id="driverZoneSelect" onchange="updateZone(this.value)">
+                <option value="المعمورة">المعمورة</option>
                 <option value="الوئام">الوئام</option>
                 <option value="محافير">محافير</option>
                 <option value="العدل">العدل</option>
@@ -232,187 +129,115 @@
                 <option value="زرقلان">زرقلان</option>
                 <option value="حي 250 سكن">حي 250 سكن</option>
                 <option value="حي المجاهدين">حي المجاهدين</option>
-                <option value="المعمورة">المعمورة</option>
                 <option value="بن سحنون">بن سحنون</option>
                 <option value="المقطع القبلي">المقطع القبلي</option>
-                <option value="زقاق الطاقة">زقاق الطاقة</option>
-                <option value="سيدي يانس">سيدي يانس</option>
-                <option value="القيلان">القيلان</option>
-                <option value="زقاق الحجاج">زقاق الحجاج</option>
-                <option value="القابو">القابو</option>
-                <option value="الصوادق">الصوادق</option>
-                <option value="بو قفيفيلة">بو قفيفيلة</option>
-                <option value="خط الواد">خط الواد</option>
-                <option value="المقطع الضهراوي">المقطع الضهراوي</option>
-                <option value="زقاق النوار">زقاق النوار</option>
-                <option value="زقاق المدرسة">زقاق المدرسة</option>
-                <option value="كريبع">كريبع</option>
-                <option value="القربية">القربية</option>
-                <option value="الشطيط">الشطيط</option>
-                <option value="بن الهروي">بن الهروي</option>
-                <option value="المقدر">المقدر</option>
-                <option value="قصر الفروج">قصر الفروج</option>
-                <option value="قصر بوعامر">قصر بوعامر</option>
-                <option value="زقاق رزوق">زقاق رزوق</option>
-                <option value="الوحات الشمالية">الوحات الشمالية</option>
-                <option value="طريق 17">طريق 17</option>
-                <option value="حي 450 سكن">حي 450 سكن</option>
-                <option value="حي 400 سكن">حي 400 سكن</option>
-                <option value="حي 800 سكن">حي 800 سكن</option>
-                <option value="الاقامة البج">الاقامة البج</option>
-                <option value="اقامة العدل">اقامة العدل</option>
-                <option value="حي 600 سكن">حي 600 سكن</option>
-                <option value="المقام">المقام</option>
-                <option value="صنوبر">صنوبر</option>
-                <option value="البلاد">البلاد</option>
-                <option value="رحبة الزيتون">رحبة الزيتون</option>
-                <option value="المقطع">المقطع</option>
-                <option value="قصر البزائم وزوايمو">قصر البزائم وزوايمو</option>
-                <option value="لازون">لازون</option>
-                <option value="الضلعة">الضلعة</option>
-                <option value="لاسيليس">لاسيليس</option>
+                <option value="وسط المدينة">وسط المدينة</option>
             </select>
         </div>
 
-        <button class="submit-btn" style="width: 100%; margin-top: 4px;" onclick="saveDriverLocationAndStatus()">
-            <span>📍</span>
-            <span>حفظ وتحديث الموقع في النظام</span>
-        </button>
+        <div class="form-group">
+            <label>📦 عدد الطلبات الناجحة المكتملة</label>
+            <input type="number" id="orderCountInput" min="0" placeholder="0">
+        </div>
+
+        <button class="btn-primary" onclick="saveDriverStatusData()">حفظ وتحديث مباشر 🔄</button>
+        
+        <br>
+        <span class="logout-link" onclick="logoutDriver()">تسجيل الخروج من هذا الجهاز</span>
     </div>
 </div>
 
 <script>
-    // خلفية الجزيئات المتطايرة الجذابة
-    const canvas = document.getElementById('bgCanvas');
-    const ctx = canvas.getContext('2d');
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const particles = Array.from({ length: 30 }, () => ({
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        radius: Math.random() * 2 + 0.5, speedY: (Math.random() - 0.5) * 0.5,
-        speedX: (Math.random() - 0.5) * 0.5, color: '#f8db1f', alpha: Math.random() * 0.4 + 0.1
-    }));
-
-    function animateBg() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-            p.x += p.speedX; p.y += p.speedY;
-            if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
-            if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fill();
-        });
-        requestAnimationFrame(animateBg);
-    }
-    animateBg();
-
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz674jmMM4X8gZk9A_g0ZptClW7RYdf51_4N5_2j--G4MNCD-OX_tw2bsoC2neHPG36lw/exec";
 
-    let driversData = {
-        d1: { id: "d1", name: "أيوب", zone: "المعمورة", pin: "1122", status: "online", orders: 12, rating: "⭐ 4.9", avatar: "👨‍✈️" },
-        d2: { id: "d2", name: "نوح", zone: "المعمورة", pin: "3344", status: "online", orders: 8, rating: "⭐ 4.8", avatar: "🛵" },
-        d3: { id: "d3", name: "أسلام", zone: "الوئام", pin: "5566", status: "online", orders: 5, rating: "⭐ 4.9", avatar: "⚡" }
+    // قاعدة بيانات الـ PIN الخاصة بالسائقين
+    const driversDb = {
+        "1234": { id: "d1", name: "أيوب", zone: "المعمورة", avatar: "👨‍✈️" },
+        "5678": { id: "d2", name: "نوح", zone: "المعمورة", avatar: "🛵" },
+        "9999": { id: "d3", name: "أيوب الوئام", zone: "الوئام", avatar: "⚡" }
     };
 
-    let authenticatedDriverKey = null;
+    let currentDriverKey = null;
+    let currentStatus = 'online';
 
-    function authenticateDriverPin() {
-        const pin = document.getElementById('portalPinInput').value.trim();
-        let foundKey = null;
-        Object.keys(driversData).forEach(k => { if (driversData[k].pin === pin) foundKey = k; });
-
-        if (foundKey) {
-            authenticatedDriverKey = foundKey;
-            document.getElementById('portalPinInput').value = '';
-            refreshDriverDashboardInfo();
+    // 🔄 التحقق الفوري عند فتح الصفحة إذا كان السائق مسجلاً من قبل
+    window.onload = function() {
+        const savedKey = localStorage.getItem('wasell_logged_driver_pin');
+        if (savedKey && driversDb[savedKey]) {
+            showDashboard(savedKey);
         } else {
-            alert("❌ الرمز السري (PIN) غير صحيح!");
+            document.getElementById('loginSection').style.display = 'block';
+        }
+    };
+
+    function loginDriver() {
+        const pin = document.getElementById('pinInput').value.trim();
+        if (driversDb[pin]) {
+            // 💾 حفظ رمز الدخول في المتصفح لكي لا يخرج أبداً
+            localStorage.setItem('wasell_logged_driver_pin', pin);
+            showDashboard(pin);
+        } else {
+            alert("❌ رمز PIN غير صحيح، يرجى المحاولة مجدداً!");
         }
     }
 
-    function refreshDriverDashboardInfo() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        document.getElementById('portalLoginView').style.display = 'none';
-        document.getElementById('portalDashboardView').style.display = 'flex';
-        document.getElementById('privAvatar').innerText = d.avatar;
-        document.getElementById('privName').innerText = d.name;
-        document.getElementById('privZoneText').innerText = `📍 متواجد حالياً بـ: ${d.zone}`;
-        document.getElementById('privOrdersCount').innerText = `🏆 رصيدك: ${d.orders} طلب ناجح`;
-        document.getElementById('portalZoneSelect').value = d.zone;
+    function showDashboard(pin) {
+        currentDriverKey = pin;
+        const driver = driversDb[pin];
+        
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('dashboardSection').style.display = 'block';
+
+        document.getElementById('driverName').innerText = driver.name;
+        document.getElementById('driverAvatar').innerText = driver.avatar;
+        document.getElementById('driverCurrentZoneDisplay').innerText = `📍 متواجد في: ${driver.zone}`;
+        document.getElementById('driverZoneSelect').value = driver.zone;
+
+        setStatus('online');
     }
 
-    function logoutDriverPortal() {
-        authenticatedDriverKey = null;
-        document.getElementById('portalLoginView').style.display = 'flex';
-        document.getElementById('portalDashboardView').style.display = 'none';
+    function setStatus(statusStr) {
+        currentStatus = statusStr;
+        document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.status-btn.${statusStr}`).classList.add('active');
     }
 
-    async function markAsDeliveredAndOnline() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        d.status = 'online'; 
-        d.zone = zone;
+    function updateZone(newZone) {
+        document.getElementById('driverCurrentZoneDisplay').innerText = `📍 متواجد في: ${newZone}`;
+    }
 
-        alert("✅ تم تأكيد التسليم بنجاح! عدت الآن لحالة متوفر 🟢");
+    async function saveDriverStatusData() {
+        if (!currentDriverKey) return;
+        const driver = driversDb[currentDriverKey];
+        const newZone = document.getElementById('driverZoneSelect').value;
+        const ordersCount = document.getElementById('orderCountInput').value;
 
-        // إرسال البيانات المحدثة مع تغيير حالة الطلب إلى "تم التسليم" في شيت الأوردات
+        const payload = {
+            action: "updateDriverStatus",
+            driverKey: driver.id,
+            status: currentStatus,
+            zone: newZone,
+            orders: ordersCount ? parseInt(ordersCount) : undefined
+        };
+
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST", mode: "no-cors",
+                method: "POST",
+                mode: "no-cors",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "updateDriver", 
-                    driverKey: authenticatedDriverKey,
-                    name: d.name, 
-                    status: 'online', 
-                    zone: zone, 
-                    orders: d.orders, 
-                    lastOrder: "تم تسليم الطلب بنجاح (Delivered)"
-                })
+                body: JSON.stringify(payload)
             });
-        } catch(e) {}
-
-        logoutDriverPortal();
+            alert("✅ تم تحديث حالتك وموقعك بنجاح في Google Sheets والموقع الرئيسي!");
+        } catch(e) {
+            alert("⚠️ حدث خطأ أثناء التحديث، تأكد من الاتصال بالإنترنت.");
+        }
     }
 
-    async function cancelOrderAndRevert() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        if (d.orders > 0) d.orders -= 1;
-        d.status = 'online'; d.zone = zone;
-
-        alert("⚠️ تم إلغاء الطلب، خصم النقطة، وعودتك متوفراً 🟢");
-        syncWithCloud(d, zone, 'online');
-        logoutDriverPortal();
-    }
-
-    async function saveDriverLocationAndStatus() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        d.zone = zone;
-
-        alert(`✅ تم تحديث موقعك المباشر إلى [${zone}] بنجاح!`);
-        syncWithCloud(d, zone, d.status);
-        logoutDriverPortal();
-    }
-
-    async function syncWithCloud(d, zone, status) {
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST", mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "updateDriver", driverKey: authenticatedDriverKey,
-                    name: d.name, status: status, zone: zone, orders: d.orders, lastOrder: `محدث`
-                })
-            });
-        } catch(e) {}
+    function logoutDriver() {
+        if (confirm("هل أنت تأكد من تسجيل الخروج من هذا الجهاز؟")) {
+            localStorage.removeItem('wasell_logged_driver_pin');
+            location.reload();
+        }
     }
 </script>
 </body>
