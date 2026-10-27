@@ -624,40 +624,36 @@
         }
 
         async function acceptCurrentOrder() {
-            if (!activeDriverKey || !activeOrder) {
-                showToast("⚠️ لا يوجد طلب نشط حالياً!", "error");
-                return;
-            }
+    if (!activeDriverKey || !activeOrder) return;
+    if (alertLoopInterval) clearInterval(alertLoopInterval);
 
-            if (alertLoopInterval) clearInterval(alertLoopInterval);
+    const currentOrderId = activeOrder.orderId;
+    const driver = DRIVERS[activeDriverKey];
+    driverStatus = 'busy';
+    updateDriverStatusBadge('🟡 مشغول', 'busy');
 
-            const driver = DRIVERS[activeDriverKey];
-            driverStatus = 'busy';
-            updateDriverStatusBadge('🟡 مشغول', 'busy');
+    document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
+    document.getElementById('deliveryActionContainer').classList.remove('hidden');
 
-            document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
-            document.getElementById('deliveryActionContainer').classList.remove('hidden');
+    showToast("✅ تم قبول الطلب!", "success");
 
-            showToast("✅ تم قبول الطلب وتحويل حالتك إلى (مشغول).", "success");
+    // تحديث حالة الطلب في قوقل شيت فوراً لكي لا يظهر مجدداً
+    try {
+        await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مقبول ✅`);
+    } catch(e) {}
+}
 
-            try {
-                await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مقبول ✅`);
-            } catch(e) {}
-
-            const currentZone = document.getElementById('laghouatZoneSelect').value;
-            await syncDriverStatusToCloud(driver.name, currentZone, 'busy', currentCompletedOrders);
-        }
-
-        async function rejectCurrentOrder() {
-            if (alertLoopInterval) clearInterval(alertLoopInterval);
-            if (activeOrder) {
-                try {
-                    await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مرفوض ❌`);
-                } catch(e) {}
-            }
-            resetToOnlineState();
-            showToast("تم رفض الطلب وإغلاقه", "info");
-        }
+async function rejectCurrentOrder() {
+    if (alertLoopInterval) clearInterval(alertLoopInterval);
+    if (activeOrder) {
+        const currentOrderId = activeOrder.orderId;
+        try {
+            await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مرفوض ❌`);
+        } catch(e) {}
+    }
+    resetToOnlineState();
+    showToast("تم رفض الطلب وإغلاقه", "info");
+}
 
         async function markOrderDelivered() {
             if (alertLoopInterval) clearInterval(alertLoopInterval);
