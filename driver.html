@@ -127,8 +127,7 @@
                     <span>دخول اللوحة الميدانية</span>
                 </button>
             </div>
-
-                    </section>
+        </section>
 
         <!-- 2. MAIN DRIVER DASHBOARD VIEW -->
         <section id="dashboardSection" class="hidden space-y-5">
@@ -342,10 +341,26 @@
         let activeOrder = null;
         let pollingTimer = null;
         let audioCtx = null;
+        let wakeLock = null;
 
         window.addEventListener('load', () => {
             initParticleCanvas();
             checkSavedSession();
+        });
+
+        // 🔋 ميزة منع خمول الشاشة
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {}
+        }
+
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
         });
 
         function checkSavedSession() {
@@ -379,14 +394,12 @@
             }
         }
 
-        function fillPinAndLogin(pin) {
-            document.getElementById('pinInput').value = pin;
-            handlePinLogin();
-        }
-
         function loginAsDriver(driverKey) {
             activeDriverKey = driverKey;
             localStorage.setItem('wasell_active_driver_key', driverKey);
+
+            // تفعيل منع خمول الشاشة
+            requestWakeLock();
 
             const driver = DRIVERS[driverKey];
             document.getElementById('driverName').textContent = driver.name;
@@ -406,6 +419,10 @@
 
         function handleLogout() {
             if (pollingTimer) clearInterval(pollingTimer);
+            if (wakeLock !== null) {
+                wakeLock.release().catch(() => {});
+                wakeLock = null;
+            }
             activeDriverKey = null;
             localStorage.removeItem('wasell_active_driver_key');
             document.getElementById('pinInput').value = '';
@@ -531,7 +548,6 @@
             }
         }
 
-        // ✅ قبول الطلب وتغيير حالته في السيرفر لكي يختفي من التكرار
         async function acceptCurrentOrder() {
             if (!activeDriverKey || !activeOrder) {
                 showToast("⚠️ لا يوجد طلب نشط حالياً!", "error");
@@ -547,7 +563,6 @@
 
             showToast("✅ تم قبول الطلب وتحويل حالتك إلى (مشغول).", "success");
 
-            // إبلاغ السيرفر بأن الطلب أصبح "مقبول" لكي يتوقف عن الظهور مجدداً
             try {
                 await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مقبول ✅`);
             } catch(e) {}
@@ -556,7 +571,6 @@
             await syncDriverStatusToCloud(driver.name, currentZone, 'busy', currentCompletedOrders);
         }
 
-        // ❌ رفض الطلب وإبلاغ السيرفر لكي يختفي
         async function rejectCurrentOrder() {
             if (activeOrder) {
                 try {
@@ -567,7 +581,6 @@
             showToast("تم رفض الطلب وإغلاقه", "info");
         }
 
-        // 🎉 تسليم الطلب والعودة للوضع المتوفر
         async function markOrderDelivered() {
             if (activeOrder) {
                 try {
