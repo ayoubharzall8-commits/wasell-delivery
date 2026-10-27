@@ -2,400 +2,730 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wasell.com | لوحة تحكم السائق الخاصة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Tajawal:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #07090e;
-            --card-bg: rgba(18, 24, 38, 0.95);
-            --logo-yellow: #f8db1f;
-            --logo-black: #0d1217;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border-glow: rgba(248, 219, 31, 0.4);
-            --radius: 20px;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WASELL.COM | لوحة التحكم الذكية للمندوبين</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandYellow: '#f8db1f',
+                        brandBlack: '#07090e',
+                        cardBg: 'rgba(18, 24, 38, 0.95)',
+                        glowYellow: 'rgba(248, 219, 31, 0.4)'
+                    },
+                    fontFamily: {
+                        tajawal: ['Tajawal', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; user-select: none; }
         body {
             font-family: 'Tajawal', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            background-color: #07090e;
+            color: #f1f5f9;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
             overflow-x: hidden;
-            position: relative;
+        }
+        
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        #bgCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; }
-
-        .portal-card {
-            background: var(--card-bg);
-            width: 100%;
-            max-width: 460px;
-            border-radius: var(--radius);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(248, 219, 31, 0.15);
-            border: 1px solid var(--border-glow);
-            padding: 28px 22px;
+        .cyber-card {
+            background: rgba(18, 24, 38, 0.92);
             backdrop-filter: blur(16px);
-            position: relative;
-            z-index: 10;
-            animation: slideUp 0.5s ease-out;
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(248, 219, 31, 0.25);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(248, 219, 31, 0.12);
         }
 
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 22px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        @keyframes cyberPulse {
+            0% { box-shadow: 0 0 10px rgba(248, 219, 31, 0.3), inset 0 0 10px rgba(248, 219, 31, 0.1); border-color: rgba(248, 219, 31, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(248, 219, 31, 0.8), inset 0 0 20px rgba(248, 219, 31, 0.3); border-color: #f8db1f; }
+            100% { box-shadow: 0 0 10px rgba(248, 219, 31, 0.3), inset 0 0 10px rgba(248, 219, 31, 0.1); border-color: rgba(248, 219, 31, 0.5); }
+        }
+        .animate-cyber-pulse {
+            animation: cyberPulse 1.2s infinite alternate ease-in-out;
         }
 
-        .header-logo {
-            width: 55px;
-            height: auto;
-            object-fit: contain;
-            filter: drop-shadow(0 0 10px rgba(248, 219, 31, 0.5));
-            animation: float 3s ease-in-out infinite;
-        }
+        .beacon-online { background-color: #22c55e; box-shadow: 0 0 12px #22c55e; }
+        .beacon-busy { background-color: #eab308; box-shadow: 0 0 12px #eab308; }
+        .beacon-offline { background-color: #ef4444; box-shadow: 0 0 12px #ef4444; }
 
-        .header h2 {
-            color: var(--logo-yellow);
-            font-size: 19px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-
-        .header p {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 3px;
-        }
-
-        .form-section { display: flex; flex-direction: column; gap: 16px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; }
-
-        label {
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--logo-yellow);
-            letter-spacing: 0.3px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            font-family: inherit;
-            font-size: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            outline: none;
-        }
-
-        input:focus, select:focus {
-            border-color: var(--logo-yellow);
-            box-shadow: 0 0 15px rgba(248, 219, 31, 0.35);
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        .submit-btn {
-            background: linear-gradient(135deg, var(--logo-yellow), #e0c21a);
-            color: var(--logo-black);
-            border: none;
-            padding: 15px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 900;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 0 20px rgba(248, 219, 31, 0.3);
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(248, 219, 31, 0.5);
-        }
-
-        .driver-profile-header {
-            background: rgba(248, 219, 31, 0.08);
-            border: 1px solid var(--logo-yellow);
-            border-radius: 14px;
-            padding: 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 6px;
-        }
-
-        .driver-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #1e293b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            border: 2px solid var(--logo-yellow);
-            box-shadow: 0 0 10px rgba(248, 219, 31, 0.3);
-        }
-
-        .action-box-green {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid #22c55e;
-            border-radius: 14px;
-            padding: 12px;
-        }
-
-        .action-box-red {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid #ef4444;
-            border-radius: 14px;
-            padding: 12px;
-        }
-
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #07090e; }
+        ::-webkit-scrollbar-thumb { background: #f8db1f; border-radius: 4px; }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center p-3 sm:p-6 relative">
 
-<canvas id="bgCanvas"></canvas>
+    <canvas id="particleCanvas"></canvas>
 
-<div class="portal-card">
-    <div class="header">
-        <img src="https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png" alt="WASELL Logo" class="header-logo">
-        <div>
-            <h2 id="portalTitle">🔐 لوحة السائق الخاصة</h2>
-            <p>نظام إدارة الحالة والموقع المباشر في الميدان</p>
-        </div>
-    </div>
-
-    <!-- الخطوة 1: تسجيل الدخول برمز PIN -->
-    <div class="form-section" id="portalLoginView">
-        <div class="form-group">
-            <label>🔑 أدخل الرمز السري (PIN)</label>
-            <input type="password" id="portalPinInput" placeholder="••••" maxlength="6" style="text-align: center; font-size: 24px; letter-spacing: 8px;">
-        </div>
-        <button class="submit-btn" style="width: 100%; margin-top: 6px;" onclick="authenticateDriverPin()">
-            <span>🔓</span>
-            <span>دخول لوحة التحكم الآمنة</span>
-        </button>
-    </div>
-
-    <!-- الخطوة 2: لوحة التحكم الخاصة بالسائق -->
-    <div class="form-section" id="portalDashboardView" style="display: none;">
-        <div class="driver-profile-header">
-            <div class="driver-avatar" id="privAvatar">👨‍✈️</div>
-            <div style="flex-grow: 1;">
-                <h4 id="privName" style="color: #fff; font-size: 16px; font-weight: 800;">أيوب</h4>
-                <p id="privZoneText" style="color: var(--text-muted); font-size: 12px;">📍 متواجد بـ: المعمورة</p>
-                <p id="privOrdersCount" style="color: var(--logo-yellow); font-size: 11px; font-weight: 800; margin-top: 2px;">🏆 الرصيد: 0 طلب</p>
+    <main class="cyber-card relative z-10 w-full max-w-lg rounded-3xl p-5 sm:p-7 transition-all duration-300">
+        
+        <header class="flex items-center justify-between pb-5 mb-5 border-b border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-brandYellow/10 border border-brandYellow flex items-center justify-center shadow-lg shadow-brandYellow/20">
+                    <i class="fa-solid fa-truck-fast text-2xl text-brandYellow"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black text-brandYellow font-tajawal tracking-wide">WASELL.COM</h1>
+                    <p class="text-xs text-gray-400 font-medium">نظام المندوبين المباشر • الأغواط</p>
+                </div>
             </div>
-            <button onclick="logoutDriverPortal()" style="background: rgba(255,77,77,0.15); border: 1px solid #ff4d4d; color: #ff4d4d; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 800; cursor: pointer;">خروج 🚪</button>
+
+            <div id="connectionBadge" class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-gray-800">
+                <span id="beaconIndicator" class="w-2.5 h-2.5 rounded-full beacon-online"></span>
+                <span id="connectionText" class="text-xs font-bold text-gray-300">متصل</span>
+            </div>
+        </header>
+
+        <audio id="alertAudio" preload="auto">
+            <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+        </audio>
+
+        <!-- 1. AUTHENTICATION VIEW -->
+        <section id="loginSection" class="space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex p-3 rounded-full bg-brandYellow/10 border border-brandYellow/30 text-brandYellow mb-1">
+                    <i class="fa-solid fa-lock text-2xl"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white">تسجيل الدخول الآمن للمندوب</h2>
+                <p class="text-xs text-gray-400">أدخل المعرف السري (PIN) للوصول للوحة المهام</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-extrabold text-brandYellow mb-2">رمز PIN الخاص بك</label>
+                    <div class="relative">
+                        <input type="password" id="pinInput" placeholder="••••" maxlength="6" inputmode="numeric"
+                               class="w-full bg-black/60 border border-gray-700 rounded-xl px-4 py-3.5 text-center text-2xl font-bold tracking-[0.5em] text-white focus:border-brandYellow focus:outline-none focus:ring-2 focus:ring-brandYellow/30 transition-all">
+                        <button onclick="togglePinVisibility()" type="button" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brandYellow p-2">
+                            <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="handlePinLogin()" class="w-full bg-gradient-to-r from-brandYellow to-yellow-500 hover:from-yellow-400 hover:to-brandYellow text-brandBlack font-black py-4 rounded-xl text-base shadow-lg shadow-brandYellow/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket text-lg"></i>
+                    <span>دخول اللوحة الميدانية</span>
+                </button>
+            </div>
+
+                    </section>
+
+        <!-- 2. MAIN DRIVER DASHBOARD VIEW -->
+        <section id="dashboardSection" class="hidden space-y-5">
+            
+            <div class="bg-black/40 border border-gray-800 rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div id="driverAvatar" class="w-12 h-12 rounded-full bg-brandYellow/10 border-2 border-brandYellow text-2xl flex items-center justify-center">
+                        👨‍✈️
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 id="driverName" class="font-extrabold text-lg text-white">الكابتن أيوب</h3>
+                            <span id="statusTag" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">🟢 متوفر</span>
+                        </div>
+                        <p id="driverLocationText" class="text-xs text-gray-400 mt-0.5">📍 المنطقة: المعمورة</p>
+                    </div>
+                </div>
+
+                <div class="text-left flex flex-col items-end gap-1">
+                    <div class="bg-brandYellow/10 border border-brandYellow/30 px-3 py-1 rounded-xl">
+                        <span class="text-[10px] text-gray-400 block font-semibold">إجمالي الطلبات</span>
+                        <span id="completedOrdersCount" class="text-base font-black text-brandYellow font-mono">0</span>
+                    </div>
+                    <button onclick="handleLogout()" class="text-[11px] text-red-400 hover:text-red-300 font-bold flex items-center gap-1 mt-1 transition-colors">
+                        <i class="fa-solid fa-power-off"></i> خروج
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-yellow-500/10 via-brandYellow/5 to-transparent border border-brandYellow/20 rounded-2xl p-3 flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs font-bold text-brandYellow">
+                    <i class="fa-solid fa-vial-circle-check text-base"></i>
+                    <span>وضع الفحص الميداني</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="triggerLocalSimulatedOrder()" class="bg-brandYellow/20 hover:bg-brandYellow/30 border border-brandYellow/40 text-brandYellow px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95">
+                        <i class="fa-solid fa-bolt text-xs"></i> تجربة طلب محاكي
+                    </button>
+                    <button onclick="pollLatestOrder(true)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 active:scale-95">
+                        <i class="fa-solid fa-arrows-rotate text-xs"></i> تحديث
+                    </button>
+                </div>
+            </div>
+
+            <!-- ACTIVE ORDER ALERT CARD -->
+            <div id="incomingOrderAlertCard" class="hidden cyber-card animate-cyber-pulse rounded-2xl p-5 border-2 border-brandYellow space-y-4 relative overflow-hidden">
+                <div class="absolute top-0 left-0 bg-brandYellow text-brandBlack text-[10px] font-black px-4 py-1 rounded-br-xl uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-bell animate-bounce"></i> طلب توصيل جديد
+                </div>
+
+                <div class="pt-3 space-y-3">
+                    <div class="flex justify-between items-start border-b border-gray-800 pb-3">
+                        <div>
+                            <span class="text-[11px] font-extrabold text-brandYellow block">رقم الطلب</span>
+                            <span id="orderIdText" class="text-sm font-mono font-bold text-white">#ORD-0000</span>
+                        </div>
+                        <div class="text-left">
+                            <span class="text-[11px] font-extrabold text-brandYellow block">التوقيت</span>
+                            <span id="orderScheduleText" class="text-xs font-medium text-gray-300">الآن</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-black/50 p-2.5 rounded-xl border border-gray-800">
+                            <span class="text-gray-400 block mb-0.5">الزبون</span>
+                            <span id="orderCustomerName" class="font-extrabold text-white text-sm">اسم الزبون</span>
+                        </div>
+
+                        <div class="bg-black/50 p-2.5 rounded-xl border border-gray-800">
+                            <span class="text-gray-400 block mb-0.5">رقم الهاتف</span>
+                            <a id="orderCustomerPhoneLink" href="tel:" class="font-black text-brandYellow text-sm hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-phone-volume text-xs"></i> <span id="orderCustomerPhone">--</span>
+                            </a>
+                        </div>
+
+                        <div class="bg-black/50 p-2.5 rounded-xl border border-gray-800 sm:col-span-2">
+                            <span class="text-gray-400 block mb-0.5">العنوان المستهدف</span>
+                            <span id="orderAddress" class="font-bold text-emerald-400">حي المعمورة، الأغواط</span>
+                        </div>
+
+                        <div class="bg-black/50 p-2.5 rounded-xl border border-gray-800">
+                            <span class="text-gray-400 block mb-0.5">نوع الخدمة</span>
+                            <span id="orderCategory" class="font-bold text-white">توصيل طلبات</span>
+                        </div>
+
+                        <div class="bg-black/50 p-2.5 rounded-xl border border-gray-800">
+                            <span class="text-gray-400 block mb-0.5">التفاصيل / الملاحظات</span>
+                            <span id="orderDetails" class="font-medium text-gray-300">بدون ملاحظات إضافية</span>
+                        </div>
+                    </div>
+
+                    <!-- ACCEPT / REJECT BUTTONS -->
+                    <div id="acceptRejectBtnGroup" class="grid grid-cols-2 gap-3 pt-2">
+                        <button onclick="acceptCurrentOrder()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <i class="fa-solid fa-check text-base"></i> قبول الطلب
+                        </button>
+                        <button onclick="rejectCurrentOrder()" class="bg-red-600/80 hover:bg-red-600 text-white font-black py-3 rounded-xl text-sm shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <i class="fa-solid fa-xmark text-base"></i> رفض الطلب
+                        </button>
+                    </div>
+
+                    <!-- DELIVERED BUTTON -->
+                    <div id="deliveryActionContainer" class="hidden pt-2 space-y-2">
+                        <button onclick="markOrderDelivered()" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black py-3.5 rounded-xl text-sm shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <i class="fa-solid fa-circle-check text-lg"></i>
+                            <span>تم تسليم الطلب والعودة للوضع المتوفر (Delivered)</span>
+                        </button>
+                    </div>
+
+                    <div id="cancelActionContainer" class="pt-1">
+                        <button onclick="cancelActiveOrder()" class="w-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-ban"></i>
+                            <span>الزبون لا يرد / إلغاء الطلب (Cancel)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WAITING STATE -->
+            <div id="waitingStateCard" class="bg-black/40 border border-gray-800 rounded-2xl p-6 text-center space-y-3">
+                <div class="inline-flex p-4 rounded-full bg-brandYellow/5 border border-brandYellow/20 text-brandYellow animate-pulse">
+                    <i class="fa-solid fa-radar text-2xl"></i>
+                </div>
+                <h4 class="font-extrabold text-white text-base">جاري رصد الطلبات الجديدة...</h4>
+                <p class="text-xs text-gray-400 max-w-xs mx-auto">أنت متصل بالشبكة وسوف يصلك تنبيه صوتي واهتزاز فور توجيه طلب جديد إليك.</p>
+            </div>
+
+            <!-- ZONE SELECTOR -->
+            <div class="bg-black/40 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <label class="block text-xs font-extrabold text-brandYellow">📍 تحديث موقعك المباشر في أحياء الأغواط</label>
+                <div class="relative">
+                    <select id="laghouatZoneSelect" class="w-full bg-black/80 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-brandYellow focus:outline-none focus:ring-2 focus:ring-brandYellow/30 appearance-none">
+                        <option value="المعمورة">المعمورة</option>
+                        <option value="الوئام">الوئام</option>
+                        <option value="محافير">محافير</option>
+                        <option value="العدل">العدل</option>
+                        <option value="لاديوان">لاديوان</option>
+                        <option value="زرقلان">زرقلان</option>
+                        <option value="حي 250 سكن">حي 250 سكن</option>
+                        <option value="حي المجاهدين">حي المجاهدين</option>
+                        <option value="بن سحنون">بن سحنون</option>
+                        <option value="المقطع القبلي">المقطع القبلي</option>
+                        <option value="زقاق الطاقة">زقاق الطاقة</option>
+                        <option value="سيدي يانس">سيدي يانس</option>
+                        <option value="القيلان">القيلان</option>
+                        <option value="زقاق الحجاج">زقاق الحجاج</option>
+                        <option value="القابو">القابو</option>
+                        <option value="الصوادق">الصوادق</option>
+                        <option value="بو قفيفيلة">بو قفيفيلة</option>
+                        <option value="خط الواد">خط الواد</option>
+                        <option value="المقطع الضهراوي">المقطع الضهراوي</option>
+                        <option value="زقاق النوار">زقاق النوار</option>
+                        <option value="زقاق المدرسة">زقاق المدرسة</option>
+                        <option value="كريبع">كريبع</option>
+                        <option value="القربية">القربية</option>
+                        <option value="الشطيط">الشطيط</option>
+                        <option value="بن الهروي">بن الهروي</option>
+                        <option value="المقدر">المقدر</option>
+                        <option value="قصر الفروج">قصر الفروج</option>
+                        <option value="قصر بوعامر">قصر بوعامر</option>
+                        <option value="زقاق رزوق">زقاق رزوق</option>
+                        <option value="الوحات الشمالية">الوحات الشمالية</option>
+                        <option value="طريق 17">طريق 17</option>
+                        <option value="حي 450 سكن">حي 450 سكن</option>
+                        <option value="حي 400 سكن">حي 400 سكن</option>
+                        <option value="حي 800 سكن">حي 800 سكن</option>
+                        <option value="الاقامة البج">الاقامة البج</option>
+                        <option value="اقامة العدل">اقامة العدل</option>
+                        <option value="حي 600 سكن">حي 600 سكن</option>
+                        <option value="المقام">المقام</option>
+                        <option value="صنوبر">صنوبر</option>
+                        <option value="البلاد">البلاد</option>
+                        <option value="رحبة الزيتون">رحبة الزيتون</option>
+                        <option value="المقطع">المقطع</option>
+                        <option value="قصر البزائم وزوايمو">قصر البزائم وزوايمو</option>
+                        <option value="لازون">لازون</option>
+                        <option value="الضلعة">الضلعة</option>
+                        <option value="لاسيليس">لاسيليس</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+
+                <button onclick="saveLocationUpdate()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+                    <i class="fa-solid fa-floppy-disk text-brandYellow"></i>
+                    <span>حفظ وتحديث التواجد في النظام السحابي</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Toast Notification -->
+        <div id="toastNotification" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-brandYellow text-brandBlack font-black px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-base"></i>
+            <span id="toastText">تمت العملية بنجاح</span>
         </div>
 
-        <!-- زر تسليم الطلب العائد للوضع متوفر -->
-        <div class="action-box-green">
-            <button class="submit-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; width: 100%; box-shadow: 0 0 15px rgba(34,197,94,0.3);" onclick="markAsDeliveredAndOnline()">
-                <span>✅</span>
-                <span>تم تسليم الطلب والعودة متوفر (Delivered)</span>
-            </button>
-        </div>
+    </main>
 
-        <!-- زر إلغاء الطلب والتراجع عن النقطة -->
-        <div class="action-box-red">
-            <button class="submit-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; width: 100%; box-shadow: none;" onclick="cancelOrderAndRevert()">
-                <span>❌</span>
-                <span>الزبون لم يرد أو ألغى الطلب (Cancel)</span>
-            </button>
-        </div>
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWrDDYgYCLMEXuMgkzpYRZkx9Ht5m9Nh4qLiHyYBr74S_TAic4l286IlYuKyZL_42JTw/exec";
 
-        <div class="form-group">
-            <label>📍 تحديث موقعك المباشر في الميدان</label>
-            <select id="portalZoneSelect">
-                <option value="الوئام">الوئام</option>
-                <option value="محافير">محافير</option>
-                <option value="العدل">العدل</option>
-                <option value="لاديوان">لاديوان</option>
-                <option value="زرقلان">زرقلان</option>
-                <option value="حي 250 سكن">حي 250 سكن</option>
-                <option value="حي المجاهدين">حي المجاهدين</option>
-                <option value="المعمورة">المعمورة</option>
-                <option value="بن سحنون">بن سحنون</option>
-                <option value="المقطع القبلي">المقطع القبلي</option>
-                <option value="زقاق الطاقة">زقاق الطاقة</option>
-                <option value="سيدي يانس">سيدي يانس</option>
-                <option value="القيلان">القيلان</option>
-                <option value="زقاق الحجاج">زقاق الحجاج</option>
-                <option value="القابو">القابو</option>
-                <option value="الصوادق">الصوادق</option>
-                <option value="بو قفيفيلة">بو قفيفيلة</option>
-                <option value="خط الواد">خط الواد</option>
-                <option value="المقطع الضهراوي">المقطع الضهراوي</option>
-                <option value="زقاق النوار">زقاق النوار</option>
-                <option value="زقاق المدرسة">زقاق المدرسة</option>
-                <option value="كريبع">كريبع</option>
-                <option value="القربية">القربية</option>
-                <option value="الشطيط">الشطيط</option>
-                <option value="بن الهروي">بن الهروي</option>
-                <option value="المقدر">المقدر</option>
-                <option value="قصر الفروج">قصر الفروج</option>
-                <option value="قصر بوعامر">قصر بوعامر</option>
-                <option value="زقاق رزوق">زقاق رزوق</option>
-                <option value="الوحات الشمالية">الوحات الشمالية</option>
-                <option value="طريق 17">طريق 17</option>
-                <option value="حي 450 سكن">حي 450 سكن</option>
-                <option value="حي 400 سكن">حي 400 سكن</option>
-                <option value="حي 800 سكن">حي 800 سكن</option>
-                <option value="الاقامة البج">الاقامة البج</option>
-                <option value="اقامة العدل">اقامة العدل</option>
-                <option value="حي 600 سكن">حي 600 سكن</option>
-                <option value="المقام">المقام</option>
-                <option value="صنوبر">صنوبر</option>
-                <option value="البلاد">البلاد</option>
-                <option value="رحبة الزيتون">رحبة الزيتون</option>
-                <option value="المقطع">المقطع</option>
-                <option value="قصر البزائم وزوايمو">قصر البزائم وزوايمو</option>
-                <option value="لازون">لازون</option>
-                <option value="الضلعة">الضلعة</option>
-                <option value="لاسيليس">لاسيليس</option>
-            </select>
-        </div>
+        const DRIVERS = {
+            d1: { key: "d1", pin: "1122", name: "الكابتن أيوب", avatar: "👨‍✈️", defaultZone: "المعمورة" },
+            d2: { key: "d2", pin: "3344", name: "الكابتن نوح", avatar: "🛵", defaultZone: "المعمورة" },
+            d3: { key: "d3", pin: "5566", name: "الكابتن أسلام", avatar: "⚡", defaultZone: "الوئام" }
+        };
 
-        <button class="submit-btn" style="width: 100%; margin-top: 4px;" onclick="saveDriverLocationAndStatus()">
-            <span>📍</span>
-            <span>حفظ وتحديث الموقع في النظام</span>
-        </button>
-    </div>
-</div>
+        let activeDriverKey = null;
+        let driverStatus = 'online';
+        let currentCompletedOrders = 0;
+        let lastReceivedOrderId = null;
+        let activeOrder = null;
+        let pollingTimer = null;
+        let audioCtx = null;
 
-<script>
-    // خلفية الجزيئات المتطايرة الجذابة
-    const canvas = document.getElementById('bgCanvas');
-    const ctx = canvas.getContext('2d');
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const particles = Array.from({ length: 30 }, () => ({
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        radius: Math.random() * 2 + 0.5, speedY: (Math.random() - 0.5) * 0.5,
-        speedX: (Math.random() - 0.5) * 0.5, color: '#f8db1f', alpha: Math.random() * 0.4 + 0.1
-    }));
-
-    function animateBg() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-            p.x += p.speedX; p.y += p.speedY;
-            if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
-            if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha; ctx.fill();
+        window.addEventListener('load', () => {
+            initParticleCanvas();
+            checkSavedSession();
         });
-        requestAnimationFrame(animateBg);
-    }
-    animateBg();
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz674jmMM4X8gZk9A_g0ZptClW7RYdf51_4N5_2j--G4MNCD-OX_tw2bsoC2neHPG36lw/exec";
+        function checkSavedSession() {
+            const savedKey = localStorage.getItem('wasell_active_driver_key');
+            const savedOrders = localStorage.getItem('wasell_driver_orders_count');
 
-    let driversData = {
-        d1: { id: "d1", name: "أيوب", zone: "المعمورة", pin: "1122", status: "online", orders: 12, rating: "⭐ 4.9", avatar: "👨‍✈️" },
-        d2: { id: "d2", name: "نوح", zone: "المعمورة", pin: "3344", status: "online", orders: 8, rating: "⭐ 4.8", avatar: "🛵" },
-        d3: { id: "d3", name: "اسلام", zone: "الوئام", pin: "5566", status: "online", orders: 5, rating: "⭐ 4.9", avatar: "⚡" }
-    };
+            if (savedOrders) {
+                currentCompletedOrders = parseInt(savedOrders) || 0;
+            }
 
-    let authenticatedDriverKey = null;
-
-    function authenticateDriverPin() {
-        const pin = document.getElementById('portalPinInput').value.trim();
-        let foundKey = null;
-        Object.keys(driversData).forEach(k => { if (driversData[k].pin === pin) foundKey = k; });
-
-        if (foundKey) {
-            authenticatedDriverKey = foundKey;
-            document.getElementById('portalPinInput').value = '';
-            refreshDriverDashboardInfo();
-        } else {
-            alert("❌ الرمز السري (PIN) غير صحيح!");
+            if (savedKey && DRIVERS[savedKey]) {
+                loginAsDriver(savedKey);
+            }
         }
-    }
 
-    function refreshDriverDashboardInfo() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        document.getElementById('portalLoginView').style.display = 'none';
-        document.getElementById('portalDashboardView').style.display = 'flex';
-        document.getElementById('privAvatar').innerText = d.avatar;
-        document.getElementById('privName').innerText = d.name;
-        document.getElementById('privZoneText').innerText = `📍 متواجد حالياً بـ: ${d.zone}`;
-        document.getElementById('privOrdersCount').innerText = `🏆 رصيدك: ${d.orders} طلب ناجح`;
-        document.getElementById('portalZoneSelect').value = d.zone;
-    }
+        function handlePinLogin() {
+            const inputPin = document.getElementById('pinInput').value.trim();
+            let matchedKey = null;
 
-    function logoutDriverPortal() {
-        authenticatedDriverKey = null;
-        document.getElementById('portalLoginView').style.display = 'flex';
-        document.getElementById('portalDashboardView').style.display = 'none';
-    }
-
-    async function markAsDeliveredAndOnline() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        d.status = 'online'; d.zone = zone;
-
-        alert("✅ تم تأكيد التسليم بنجاح! عدت الآن لحالة متوفر 🟢");
-        syncWithCloud(d, zone, 'online');
-        logoutDriverPortal();
-    }
-
-    async function cancelOrderAndRevert() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        if (d.orders > 0) d.orders -= 1;
-        d.status = 'online'; d.zone = zone;
-
-        alert("⚠️ تم إلغاء الطلب، خصم النقطة، وعودتك متوفراً 🟢");
-        syncWithCloud(d, zone, 'online');
-        logoutDriverPortal();
-    }
-
-    async function saveDriverLocationAndStatus() {
-        if (!authenticatedDriverKey) return;
-        const d = driversData[authenticatedDriverKey];
-        const zone = document.getElementById('portalZoneSelect').value;
-        d.zone = zone;
-
-        alert(`✅ تم تحديث موقعك المباشر إلى [${zone}] بنجاح!`);
-        syncWithCloud(d, zone, d.status);
-        logoutDriverPortal();
-    }
-
-    async function syncWithCloud(d, zone, status) {
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST", mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "updateDriver", driverKey: authenticatedDriverKey,
-                    name: d.name, status: status, zone: zone, orders: d.orders, lastOrder: `محدث`
-                })
+            Object.keys(DRIVERS).forEach(key => {
+                if (DRIVERS[key].pin === inputPin) {
+                    matchedKey = key;
+                }
             });
-        } catch(e) {}
-    }
-</script>
+
+            if (matchedKey) {
+                loginAsDriver(matchedKey);
+                showToast("أهلاً وسهلاً بك يا كابتن!", "success");
+            } else {
+                showToast("رمز PIN غير صحيح، حاول مجدداً", "error");
+            }
+        }
+
+        function fillPinAndLogin(pin) {
+            document.getElementById('pinInput').value = pin;
+            handlePinLogin();
+        }
+
+        function loginAsDriver(driverKey) {
+            activeDriverKey = driverKey;
+            localStorage.setItem('wasell_active_driver_key', driverKey);
+
+            const driver = DRIVERS[driverKey];
+            document.getElementById('driverName').textContent = driver.name;
+            document.getElementById('driverAvatar').textContent = driver.avatar;
+            document.getElementById('completedOrdersCount').textContent = currentCompletedOrders;
+
+            const savedZone = localStorage.getItem(`wasell_zone_${driverKey}`) || driver.defaultZone;
+            document.getElementById('laghouatZoneSelect').value = savedZone;
+            document.getElementById('driverLocationText').textContent = `📍 المنطقة: ${savedZone}`;
+
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+
+            startPollingLoop();
+            syncDriverStatusToCloud(driver.name, savedZone, driverStatus, currentCompletedOrders);
+        }
+
+        function handleLogout() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            activeDriverKey = null;
+            localStorage.removeItem('wasell_active_driver_key');
+            document.getElementById('pinInput').value = '';
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            showToast("تم تسجيل الخروج", "info");
+        }
+
+        function togglePinVisibility() {
+            const input = document.getElementById('pinInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function startPollingLoop() {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(() => pollLatestOrder(false), 4000);
+            pollLatestOrder(false);
+        }
+
+        async function pollLatestOrder(isManualTrigger = false) {
+            if (!activeDriverKey) return;
+
+            const beacon = document.getElementById('beaconIndicator');
+            const connText = document.getElementById('connectionText');
+
+            try {
+                const driver = DRIVERS[activeDriverKey];
+                const targetUrl = `${GOOGLE_SCRIPT_URL}?action=getLatestOrder&driverKey=${driver.key}&t=${Date.now()}`;
+                
+                const response = await fetch(targetUrl);
+                const data = await response.json();
+
+                beacon.className = "w-2.5 h-2.5 rounded-full beacon-online";
+                connText.textContent = "متصل";
+
+                if (data && data.orderId && data.orderId !== lastReceivedOrderId) {
+                    lastReceivedOrderId = data.orderId;
+                    displayIncomingOrder(data);
+                } else if (isManualTrigger) {
+                    showToast("تم التحديث: لا توجد طلبات جديدة حالياً", "info");
+                }
+            } catch (err) {
+                beacon.className = "w-2.5 h-2.5 rounded-full beacon-offline";
+                connText.textContent = "إشارة ضعيفة";
+                if (isManualTrigger) {
+                    showToast("خطأ في الاتصال بالخادم", "error");
+                }
+            }
+        }
+
+        function triggerLocalSimulatedOrder() {
+            if (!activeDriverKey) return;
+            const driver = DRIVERS[activeDriverKey];
+            const currentZone = document.getElementById('laghouatZoneSelect').value;
+
+            const simulatedData = {
+                orderId: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+                driverKey: driver.key,
+                name: "محمد الأغواطي",
+                phone: "0661234567",
+                address: `حي ${currentZone}، مقابل المسجد الكبير`,
+                category: "توصيل وجبات ومواد غذائية",
+                details: "يرجى التوصيل في أسرع وقت مع الاتصال عند الوصول",
+                schedule: "الآن فوري"
+            };
+
+            displayIncomingOrder(simulatedData);
+            showToast("تم إطلاق طلب تجريبي محاكي!", "success");
+        }
+
+        function displayIncomingOrder(orderData) {
+            activeOrder = orderData;
+
+            document.getElementById('orderIdText').textContent = `#${orderData.orderId}`;
+            document.getElementById('orderScheduleText').textContent = orderData.schedule || 'فوري';
+            document.getElementById('orderCustomerName').textContent = orderData.name || 'زبون WASELL';
+            document.getElementById('orderCustomerPhone').textContent = orderData.phone || '0000000000';
+            document.getElementById('orderCustomerPhoneLink').href = `tel:${orderData.phone || ''}`;
+            document.getElementById('orderAddress').textContent = orderData.address || 'الأغواط';
+            document.getElementById('orderCategory').textContent = orderData.category || 'توصيل';
+            document.getElementById('orderDetails').textContent = orderData.details || 'لا توجد تفاصيل إضافية';
+
+            document.getElementById('waitingStateCard').classList.add('hidden');
+            document.getElementById('incomingOrderAlertCard').classList.remove('hidden');
+
+            document.getElementById('acceptRejectBtnGroup').classList.remove('hidden');
+            document.getElementById('deliveryActionContainer').classList.add('hidden');
+
+            triggerAlertAudioAndVibration();
+        }
+
+        function triggerAlertAudioAndVibration() {
+            const audioEl = document.getElementById('alertAudio');
+            if (audioEl) {
+                audioEl.currentTime = 0;
+                audioEl.play().catch(() => {});
+            }
+
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } catch (e) {}
+
+            if ("vibrate" in navigator) {
+                navigator.vibrate([400, 200, 400, 200, 600]);
+            }
+        }
+
+        // ✅ قبول الطلب وتغيير حالته في السيرفر لكي يختفي من التكرار
+        async function acceptCurrentOrder() {
+            if (!activeDriverKey || !activeOrder) {
+                showToast("⚠️ لا يوجد طلب نشط حالياً!", "error");
+                return;
+            }
+
+            const driver = DRIVERS[activeDriverKey];
+            driverStatus = 'busy';
+            updateDriverStatusBadge('🟡 مشغول', 'busy');
+
+            document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
+            document.getElementById('deliveryActionContainer').classList.remove('hidden');
+
+            showToast("✅ تم قبول الطلب وتحويل حالتك إلى (مشغول).", "success");
+
+            // إبلاغ السيرفر بأن الطلب أصبح "مقبول" لكي يتوقف عن الظهور مجدداً
+            try {
+                await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مقبول ✅`);
+            } catch(e) {}
+
+            const currentZone = document.getElementById('laghouatZoneSelect').value;
+            await syncDriverStatusToCloud(driver.name, currentZone, 'busy', currentCompletedOrders);
+        }
+
+        // ❌ رفض الطلب وإبلاغ السيرفر لكي يختفي
+        async function rejectCurrentOrder() {
+            if (activeOrder) {
+                try {
+                    await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مرفوض ❌`);
+                } catch(e) {}
+            }
+            resetToOnlineState();
+            showToast("تم رفض الطلب وإغلاقه", "info");
+        }
+
+        // 🎉 تسليم الطلب والعودة للوضع المتوفر
+        async function markOrderDelivered() {
+            if (activeOrder) {
+                try {
+                    await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${activeOrder.orderId}&status=مكتمل 🏁`);
+                } catch(e) {}
+            }
+
+            currentCompletedOrders += 1;
+            localStorage.setItem('wasell_driver_orders_count', currentCompletedOrders);
+            document.getElementById('completedOrdersCount').textContent = currentCompletedOrders;
+
+            resetToOnlineState();
+
+            const driver = DRIVERS[activeDriverKey];
+            const zone = document.getElementById('laghouatZoneSelect').value;
+            syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
+
+            showToast("🎉 مبروك! تم تسليم الطلب بنجاح", "success");
+        }
+
+        function cancelActiveOrder() {
+            if (currentCompletedOrders > 0) {
+                currentCompletedOrders -= 1;
+                localStorage.setItem('wasell_driver_orders_count', currentCompletedOrders);
+                document.getElementById('completedOrdersCount').textContent = currentCompletedOrders;
+            }
+
+            resetToOnlineState();
+
+            const driver = DRIVERS[activeDriverKey];
+            const zone = document.getElementById('laghouatZoneSelect').value;
+            syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
+
+            showToast("تم إلغاء الطلب وإعادة الضبط", "error");
+        }
+
+        function resetToOnlineState() {
+            activeOrder = null;
+            driverStatus = 'online';
+            updateDriverStatusBadge('🟢 متوفر', 'online');
+
+            document.getElementById('incomingOrderAlertCard').classList.add('hidden');
+            document.getElementById('waitingStateCard').classList.remove('hidden');
+        }
+
+        function updateDriverStatusBadge(text, type) {
+            const badge = document.getElementById('statusTag');
+            const beacon = document.getElementById('beaconIndicator');
+
+            if (type === 'busy') {
+                badge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40";
+                badge.textContent = text;
+                beacon.className = "w-2.5 h-2.5 rounded-full beacon-busy";
+            } else {
+                badge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                badge.textContent = text;
+                beacon.className = "w-2.5 h-2.5 rounded-full beacon-online";
+            }
+        }
+
+        function saveLocationUpdate() {
+            if (!activeDriverKey) return;
+
+            const selectedZone = document.getElementById('laghouatZoneSelect').value;
+            localStorage.setItem(`wasell_zone_${activeDriverKey}`, selectedZone);
+            document.getElementById('driverLocationText').textContent = `📍 المنطقة: ${selectedZone}`;
+
+            const driver = DRIVERS[activeDriverKey];
+            syncDriverStatusToCloud(driver.name, selectedZone, driverStatus, currentCompletedOrders);
+
+            showToast(`تم تحديث موقعك المباشر في [${selectedZone}]`, "success");
+        }
+
+        async function syncDriverStatusToCloud(driverName, zone, status, ordersCount) {
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateDriver',
+                        driverKey: activeDriverKey,
+                        name: driverName,
+                        status: status,
+                        zone: zone,
+                        orders: ordersCount,
+                        lastOrder: `تحديث ${new Date().toLocaleTimeString('ar-DZ')}`
+                    })
+                });
+            } catch (err) {}
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toastNotification');
+            const toastText = document.getElementById('toastText');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastText.textContent = message;
+
+            if (type === "error") {
+                toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-red-500 text-white font-black px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs transition-all duration-300 opacity-100 translate-y-0";
+                toastIcon.className = "fa-solid fa-circle-xmark text-base";
+            } else if (type === "info") {
+                toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white border border-gray-700 font-black px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs transition-all duration-300 opacity-100 translate-y-0";
+                toastIcon.className = "fa-solid fa-circle-info text-base text-brandYellow";
+            } else {
+                toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-brandYellow text-brandBlack font-black px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs transition-all duration-300 opacity-100 translate-y-0";
+                toastIcon.className = "fa-solid fa-circle-check text-base";
+            }
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function initParticleCanvas() {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < 35; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    alpha: Math.random() * 0.5 + 0.1
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(248, 219, 31, ${p.alpha})`;
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
 </body>
 </html>
