@@ -277,7 +277,7 @@
                         <option value="القابو">القابو</option>
                         <option value="الصوادق">الصوادق</option>
                         <option value="بو قفيفيلة">بو قفيفيلة</option>
-                        <option value="خط الواد">خط الواد</option.
+                        <option value="خط الواد">خط الواد</option>
                         <option value="المقطع الضهراوي">المقطع الضهراوي</option>
                         <option value="زقاق النوار">زقاق النوار</option>
                         <option value="زقاق المدرسة">زقاق المدرسة</option>
@@ -325,59 +325,6 @@
 
     </main>
 
-    <!-- ⚡ Firebase 9 JS SDK (Modular Scripts) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging.js";
-
-        // إعدادات مشروع فايبربيس الخاص بك
-        const firebaseConfig = {
-            apiKey: "AIzaSyBMphobaDNm_fz-N2cd1F0lkUMsopiI8Is",
-            authDomain: "waselldrivers.firebaseapp.com",
-            projectId: "waselldrivers",
-            storageBucket: "waselldrivers.firebasestorage.app",
-            messagingSenderId: "964113381100",
-            appId: "1:964113381100:web:d5363a9b21d2eb897097c9",
-            measurementId: "G-95XV08XMHF"
-        };
-
-        const vapidKey = "BAjIjJalj4KdqboaJAaMgrI76HrvVv0ZRtcmOOdWjaFxXIDLVRP-zCgJwFRT0olIAWxIuEwmmiVPzMUist7y088";
-
-        const app = initializeApp(firebaseConfig);
-        const messaging = getMessaging(app);
-
-        // دالة تفعيل وتوليد رمز FCM التابع للجهاز
-        window.initFCMNotifications = async function() {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const currentToken = await getToken(messaging, { vapidKey: vapidKey });
-                    if (currentToken) {
-                        window.currentFcmToken = currentToken;
-                        console.log("FCM Token Generated Successfully:", currentToken);
-                        if (window.activeDriverKey) {
-                            window.syncDriverFcmTokenToCloud(currentToken);
-                        }
-                    }
-                } else {
-                    console.log("Notification permission denied by user.");
-                }
-            } catch (err) {
-                console.error("Error initializing FCM Notifications:", err);
-            }
-        };
-
-        // استقبال التنبيهات أثناء فتح التطبيق
-        onMessage(messaging, (payload) => {
-            console.log("Received foreground FCM message:", payload);
-            if (payload.data && payload.data.orderId) {
-                window.displayIncomingOrder(payload.data);
-            } else {
-                window.triggerAlertAudioAndVibration();
-            }
-        });
-    </script>
-
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyD1RSndEaeFH9vw-ZToP__c3SvfzFIi4Mk1APdp6NzjfLFJ4DbKIJoALQbmbmIJEMwbA/exec";
 
@@ -396,14 +343,12 @@
         let alertLoopInterval = null;
         let audioCtx = null;
         let wakeLock = null;
-        let currentFcmToken = null;
 
         window.addEventListener('load', () => {
             initParticleCanvas();
             checkSavedSession();
         });
 
-        // 🔋 ميزة منع خمول الشاشة
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
@@ -455,11 +400,6 @@
             localStorage.setItem('wasell_active_driver_key', driverKey);
 
             requestWakeLock();
-
-            // طلب إذن الإشعارات وتفعيل FCM فور تسجيل الدخول
-            if (typeof window.initFCMNotifications === 'function') {
-                window.initFCMNotifications();
-            }
 
             const driver = DRIVERS[driverKey];
             document.getElementById('driverName').textContent = driver.name;
@@ -623,38 +563,47 @@
             }
         }
 
+        // 🟡 قبول الطلب وتحديث حالة السائق فوراً في الخادم إلى busy
         async function acceptCurrentOrder() {
-    if (!activeDriverKey || !activeOrder) return;
-    if (alertLoopInterval) clearInterval(alertLoopInterval);
+            if (!activeDriverKey || !activeOrder) return;
+            if (alertLoopInterval) clearInterval(alertLoopInterval);
 
-    const currentOrderId = activeOrder.orderId;
-    const driver = DRIVERS[activeDriverKey];
-    driverStatus = 'busy';
-    updateDriverStatusBadge('🟡 مشغول', 'busy');
+            const currentOrderId = activeOrder.orderId;
+            const driver = DRIVERS[activeDriverKey];
+            const currentZone = document.getElementById('laghouatZoneSelect').value;
 
-    document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
-    document.getElementById('deliveryActionContainer').classList.remove('hidden');
+            driverStatus = 'busy';
+            updateDriverStatusBadge('🟡 مشغول', 'busy');
 
-    showToast("✅ تم قبول الطلب!", "success");
+            document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
+            document.getElementById('deliveryActionContainer').classList.remove('hidden');
 
-    // تحديث حالة الطلب في قوقل شيت فوراً لكي لا يظهر مجدداً
-    try {
-        await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مقبول ✅`);
-    } catch(e) {}
-}
+            showToast("✅ تم قبول الطلب!", "success");
 
-async function rejectCurrentOrder() {
-    if (alertLoopInterval) clearInterval(alertLoopInterval);
-    if (activeOrder) {
-        const currentOrderId = activeOrder.orderId;
-        try {
-            await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مرفوض ❌`);
-        } catch(e) {}
-    }
-    resetToOnlineState();
-    showToast("تم رفض الطلب وإغلاقه", "info");
-}
+            try {
+                // 1. تحديث حالة الطلب إلى مقبول
+                await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مقبول ✅`);
+                
+                // 2. تحديث حالة السائق إلى busy في شيت Drivers
+                syncDriverStatusToCloud(driver.name, currentZone, 'busy', currentCompletedOrders);
+            } catch(e) {
+                console.error("Error updating status:", e);
+            }
+        }
 
+        async function rejectCurrentOrder() {
+            if (alertLoopInterval) clearInterval(alertLoopInterval);
+            if (activeOrder) {
+                const currentOrderId = activeOrder.orderId;
+                try {
+                    await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مرفوض ❌`);
+                } catch(e) {}
+            }
+            resetToOnlineState();
+            showToast("تم رفض الطلب وإغلاقه", "info");
+        }
+
+        // 🟢 تسليم الطلب وإرجاع حالة السائق فوراً إلى online (متوفر)
         async function markOrderDelivered() {
             if (alertLoopInterval) clearInterval(alertLoopInterval);
             if (activeOrder) {
@@ -700,6 +649,12 @@ async function rejectCurrentOrder() {
 
             document.getElementById('incomingOrderAlertCard').classList.add('hidden');
             document.getElementById('waitingStateCard').classList.remove('hidden');
+
+            if (activeDriverKey) {
+                const driver = DRIVERS[activeDriverKey];
+                const zone = document.getElementById('laghouatZoneSelect').value;
+                syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
+            }
         }
 
         function updateDriverStatusBadge(text, type) {
@@ -730,26 +685,6 @@ async function rejectCurrentOrder() {
             showToast(`تم تحديث موقعك المباشر في [${selectedZone}]`, "success");
         }
 
-        async function syncDriverFcmTokenToCloud(fcmToken) {
-            if (!activeDriverKey) return;
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'updateDriverFcmToken',
-                        driverKey: activeDriverKey,
-                        fcmToken: fcmToken
-                    })
-                });
-                console.log("FCM Token synced with Apps Script successfully.");
-            } catch (err) {}
-        }
-        window.syncDriverFcmTokenToCloud = syncDriverFcmTokenToCloud;
-        window.displayIncomingOrder = displayIncomingOrder;
-        window.triggerAlertAudioAndVibration = triggerAlertAudioAndVibration;
-
         async function syncDriverStatusToCloud(driverName, zone, status, ordersCount) {
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
@@ -763,7 +698,6 @@ async function rejectCurrentOrder() {
                         status: status,
                         zone: zone,
                         orders: ordersCount,
-                        fcmToken: window.currentFcmToken || '',
                         lastOrder: `تحديث ${new Date().toLocaleTimeString('ar-DZ')}`
                     })
                 });
