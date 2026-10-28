@@ -164,7 +164,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button onclick="triggerLocalSimulatedOrder()" class="bg-brandYellow/20 hover:bg-brandYellow/30 border border-brandYellow/40 text-brandYellow px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 active:scale-95">
-                        <i class="fa-solid fa-bolt text-xs"></i> تجربة طلب محاكي
+                        <i class="fa-solid fa-bolt text-xs"></i> تجربة طلب
                     </button>
                     <button onclick="pollLatestOrder(true)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 active:scale-95">
                         <i class="fa-solid fa-arrows-rotate text-xs"></i> تحديث
@@ -253,6 +253,23 @@
                 </div>
                 <h4 class="font-extrabold text-white text-base">جاري رصد الطلبات الجديدة...</h4>
                 <p class="text-xs text-gray-400 max-w-xs mx-auto">أنت متصل بالشبكة وسوف يصلك تنبيه صوتي واهتزاز فور توجيه طلب جديد إليك.</p>
+            </div>
+
+            <!-- 🎛️ DRIVER STATUS SELECTOR (ONLINE / BUSY / OFFLINE) -->
+            <div class="bg-black/40 border border-gray-800 rounded-2xl p-4 space-y-3">
+                <label class="block text-xs font-extrabold text-brandYellow">⚡ حالتك الميدانية (للراحة، النوم، أو العمل)</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="statusBtnOnline" onclick="changeManualStatus('online')" class="py-2.5 rounded-xl font-black text-xs border border-emerald-500/40 bg-emerald-500/20 text-emerald-400 transition-all active:scale-95">
+                        🟢 متوفر
+                    </button>
+                    <button type="button" id="statusBtnBusy" onclick="changeManualStatus('busy')" class="py-2.5 rounded-xl font-black text-xs border border-amber-500/40 bg-amber-500/5 text-amber-400 transition-all active:scale-95">
+                        🟡 مشغول
+                    </button>
+                    <button type="button" id="statusBtnOffline" onclick="changeManualStatus('offline')" class="py-2.5 rounded-xl font-black text-xs border border-red-500/40 bg-red-500/5 text-red-400 transition-all active:scale-95">
+                        🔴 غير متوفر
+                    </button>
+                </div>
+                <p class="text-[11px] text-gray-400 text-center">اختر [غير متوفر] ليلاً للراحة ولن يتم إرسال طلبات إليك.</p>
             </div>
 
             <!-- ZONE SELECTOR -->
@@ -413,8 +430,8 @@
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('dashboardSection').classList.remove('hidden');
 
+            changeManualStatus('online'); // يبدأ كمتوفر افتراضياً عند الدخول
             startPollingLoop();
-            syncDriverStatusToCloud(driver.name, savedZone, driverStatus, currentCompletedOrders);
         }
 
         function handleLogout() {
@@ -445,6 +462,39 @@
             }
         }
 
+        // 🎛️ تغيير الحالة يدوياً (متوفر / مشغول / غير متوفر)
+        function changeManualStatus(status) {
+            if (!activeDriverKey) return;
+            driverStatus = status;
+
+            const btnOnline = document.getElementById('statusBtnOnline');
+            const btnBusy = document.getElementById('statusBtnBusy');
+            const btnOffline = document.getElementById('statusBtnOffline');
+
+            // إعادة تعيين الألوان
+            btnOnline.className = "py-2.5 rounded-xl font-black text-xs border border-emerald-500/20 bg-emerald-500/5 text-gray-400 transition-all active:scale-95";
+            btnBusy.className = "py-2.5 rounded-xl font-black text-xs border border-amber-500/20 bg-amber-500/5 text-gray-400 transition-all active:scale-95";
+            btnOffline.className = "py-2.5 rounded-xl font-black text-xs border border-red-500/20 bg-red-500/5 text-gray-400 transition-all active:scale-95";
+
+            if (status === 'online') {
+                btnOnline.className = "py-2.5 rounded-xl font-black text-xs border border-emerald-500/40 bg-emerald-500/20 text-emerald-400 transition-all active:scale-95";
+                updateDriverStatusBadge('🟢 متوفر', 'online');
+                showToast("أنت الآن [متوفر] لاستقبال الطلبات", "success");
+            } else if (status === 'busy') {
+                btnBusy.className = "py-2.5 rounded-xl font-black text-xs border border-amber-500/40 bg-amber-500/20 text-amber-400 transition-all active:scale-95";
+                updateDriverStatusBadge('🟡 مشغول', 'busy');
+                showToast("أنت الآن في حالة [مشغول]", "info");
+            } else if (status === 'offline') {
+                btnOffline.className = "py-2.5 rounded-xl font-black text-xs border border-red-500/40 bg-red-500/20 text-red-400 transition-all active:scale-95";
+                updateDriverStatusBadge('🔴 غير متوفر', 'offline');
+                showToast("أنت الآن [غير متوفر] لراحة الليل / النوم", "info");
+            }
+
+            const driver = DRIVERS[activeDriverKey];
+            const zone = document.getElementById('laghouatZoneSelect').value;
+            syncDriverStatusToCloud(driver.name, zone, status, currentCompletedOrders);
+        }
+
         function startPollingLoop() {
             if (pollingTimer) clearInterval(pollingTimer);
             pollingTimer = setInterval(() => pollLatestOrder(false), 4000);
@@ -453,6 +503,11 @@
 
         async function pollLatestOrder(isManualTrigger = false) {
             if (!activeDriverKey) return;
+            // إذا كان السائق في وضع غير متوفر (offline)، لا داعي للبحث عن طلبات جديدة
+            if (driverStatus === 'offline') {
+                if (isManualTrigger) showToast("أنت في وضع [غير متوفر] حالياً", "info");
+                return;
+            }
 
             const beacon = document.getElementById('beaconIndicator');
             const connText = document.getElementById('connectionText');
@@ -563,7 +618,6 @@
             }
         }
 
-        // 🟡 قبول الطلب وتحديث حالة السائق فوراً في الخادم إلى busy
         async function acceptCurrentOrder() {
             if (!activeDriverKey || !activeOrder) return;
             if (alertLoopInterval) clearInterval(alertLoopInterval);
@@ -572,8 +626,7 @@
             const driver = DRIVERS[activeDriverKey];
             const currentZone = document.getElementById('laghouatZoneSelect').value;
 
-            driverStatus = 'busy';
-            updateDriverStatusBadge('🟡 مشغول', 'busy');
+            changeManualStatus('busy');
 
             document.getElementById('acceptRejectBtnGroup').classList.add('hidden');
             document.getElementById('deliveryActionContainer').classList.remove('hidden');
@@ -581,14 +634,9 @@
             showToast("✅ تم قبول الطلب!", "success");
 
             try {
-                // 1. تحديث حالة الطلب إلى مقبول
                 await fetch(`${GOOGLE_SCRIPT_URL}?action=updateOrderStatus&orderId=${currentOrderId}&status=مقبول ✅`);
-                
-                // 2. تحديث حالة السائق إلى busy في شيت Drivers
                 syncDriverStatusToCloud(driver.name, currentZone, 'busy', currentCompletedOrders);
-            } catch(e) {
-                console.error("Error updating status:", e);
-            }
+            } catch(e) {}
         }
 
         async function rejectCurrentOrder() {
@@ -603,7 +651,6 @@
             showToast("تم رفض الطلب وإغلاقه", "info");
         }
 
-        // 🟢 تسليم الطلب وإرجاع حالة السائق فوراً إلى online (متوفر)
         async function markOrderDelivered() {
             if (alertLoopInterval) clearInterval(alertLoopInterval);
             if (activeOrder) {
@@ -617,11 +664,6 @@
             document.getElementById('completedOrdersCount').textContent = currentCompletedOrders;
 
             resetToOnlineState();
-
-            const driver = DRIVERS[activeDriverKey];
-            const zone = document.getElementById('laghouatZoneSelect').value;
-            syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
-
             showToast("🎉 مبروك! تم تسليم الطلب بنجاح", "success");
         }
 
@@ -634,27 +676,15 @@
             }
 
             resetToOnlineState();
-
-            const driver = DRIVERS[activeDriverKey];
-            const zone = document.getElementById('laghouatZoneSelect').value;
-            syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
-
             showToast("تم إلغاء الطلب وإعادة الضبط", "error");
         }
 
         function resetToOnlineState() {
             activeOrder = null;
-            driverStatus = 'online';
-            updateDriverStatusBadge('🟢 متوفر', 'online');
+            changeManualStatus('online');
 
             document.getElementById('incomingOrderAlertCard').classList.add('hidden');
             document.getElementById('waitingStateCard').classList.remove('hidden');
-
-            if (activeDriverKey) {
-                const driver = DRIVERS[activeDriverKey];
-                const zone = document.getElementById('laghouatZoneSelect').value;
-                syncDriverStatusToCloud(driver.name, zone, 'online', currentCompletedOrders);
-            }
         }
 
         function updateDriverStatusBadge(text, type) {
@@ -665,6 +695,10 @@
                 badge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40";
                 badge.textContent = text;
                 beacon.className = "w-2.5 h-2.5 rounded-full beacon-busy";
+            } else if (type === 'offline') {
+                badge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40";
+                badge.textContent = text;
+                beacon.className = "w-2.5 h-2.5 rounded-full beacon-offline";
             } else {
                 badge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
                 badge.textContent = text;
