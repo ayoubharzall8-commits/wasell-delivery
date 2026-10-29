@@ -364,6 +364,11 @@
         window.addEventListener('load', () => {
             initParticleCanvas();
             checkSavedSession();
+            
+            // 🔔 طلب إذن إشعارات الشاشة (Push Notifications) تلقائياً عند فتح الصفحة
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
         });
 
         async function requestWakeLock() {
@@ -417,6 +422,11 @@
             localStorage.setItem('wasell_active_driver_key', driverKey);
 
             requestWakeLock();
+
+            // 🔔 طلب إذن الإشعارات مجدداً عند تسجيل الدخول لضمان تفعيله في المتصفح
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
 
             const driver = DRIVERS[driverKey];
             document.getElementById('driverName').textContent = driver.name;
@@ -525,6 +535,10 @@
                 if (data && data.orderId && data.orderId !== lastReceivedOrderId) {
                     lastReceivedOrderId = data.orderId;
                     displayIncomingOrder(data);
+                    
+                    // 🔔 إطلاق إشعار الشاشة الفوري (Push Notification) حتى لو كان الهاتف في الخلفية
+                    triggerPushNotification(data.orderId, data.address || 'الأغواط');
+
                 } else if (isManualTrigger) {
                     showToast("تم التحديث: لا توجد طلبات جديدة حالياً", "info");
                 }
@@ -534,6 +548,17 @@
                 if (isManualTrigger) {
                     showToast("خطأ في الاتصال بالخادم", "error");
                 }
+            }
+        }
+
+        // 🔔 دالة إطلاق إشعار نظام الهاتف الأصلي (Push Notification)
+        function triggerPushNotification(orderId, addressText) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("🛵 طلب توصيل جديد في WASELL.COM!", {
+                    body: `وصلك طلب جديد #${orderId} في (${addressText}). اضغط للفتح والقبول.`,
+                    icon: "https://i.postimg.cc/8z5F12wR/Firefly-Remove-Background.png",
+                    vibrate: [300, 100, 300]
+                });
             }
         }
 
@@ -554,7 +579,8 @@
             };
 
             displayIncomingOrder(simulatedData);
-            showToast("تم إطلاق طلب تجريبي محاكي!", "success");
+            triggerPushNotification(simulatedData.orderId, currentZone);
+            showToast("تم إطلاق طلب تجريبي محاكي ومعاينة إشعار الشاشة!", "success");
         }
 
         function displayIncomingOrder(orderData) {
